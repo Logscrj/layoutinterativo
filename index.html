@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Etex STC - Sistema de Vagas de Estoque</title>
+    <style>
+        /* Estilos CSS (Cores: Laranja e Preto) */
+        :root {
+            --cor-principal: #FF8C00; /* Laranja Vívido */
+            --cor-secundaria: #1E1E1E; /* Preto Quase Total */
+            --cor-fundo: #F5F5F5; /* Fundo Claro para contraste */
+            --cor-texto: #FFFFFF; /* Texto em destaque */
+            --cor-texto-principal: #1E1E1E;
+            --cor-ocupado: #FFD700; /* Dourado/Amarelo para Ocupação */
+            --cor-vazio: #333333; /* Cinza Escuro para Vazio */
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto-principal);
+        }
+
+        header {
+            background-color: var(--cor-secundaria);
+            color: var(--cor-texto);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 5px solid var(--cor-principal);
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        /* --- Dashboard de Ocupação --- */
+        #dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card-dashboard {
+            background-color: var(--cor-secundaria);
+            color: var(--cor-texto);
+            padding: 15px;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 200px;
+            border: 1px solid var(--cor-principal);
+        }
+
+        .card-dashboard h3 {
+            margin-top: 0;
+            color: var(--cor-principal);
+            font-size: 1.1em;
+        }
+
+        .progress-bar-container {
+            background-color: var(--cor-vazio);
+            border-radius: 5px;
+            margin-top: 5px;
+            height: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--cor-principal);
+            text-align: right;
+            line-height: 20px;
+            color: var(--cor-secundaria);
+            font-weight: bold;
+            transition: width 0.5s ease-in-out;
+            padding-right: 5px;
+            box-sizing: border-box;
+        }
+
+        /* --- Layout de Áreas --- */
+        #layout-areas {
+            display: grid;
+            gap: 20px;
+        }
+
+        .area {
+            background-color: #ffffff;
+            border: 2px solid var(--cor-secundaria);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .area h2 {
+            color: var(--cor-principal);
+            border-bottom: 2px solid var(--cor-principal);
+            padding-bottom: 5px;
+            margin-top: 0;
+            cursor: pointer; /* Para indicar que é clicável (esconder/mostrar) */
+        }
+
+        .ruas-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* Estilo da "Vaga" (Rua) */
+        .vaga {
+            background-color: var(--cor-vazio);
+            color: var(--cor-texto);
+            padding: 10px;
+            border-radius: 4px;
+            width: 150px;
+            border: 1px solid var(--cor-secundaria);
+            cursor: pointer;
+            transition: background-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        .vaga.ocupada {
+            background-color: var(--cor-ocupado);
+            color: var(--cor-secundaria);
+            font-weight: bold;
+        }
+
+        .vaga:hover {
+            opacity: 0.9;
+        }
+
+        .vaga h4 {
+            margin: 0 0 5px 0;
+            font-size: 1em;
+        }
+
+        .vaga-info {
+            font-size: 0.8em;
+        }
+
+        /* --- Modal de Edição/Visualização --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: var(--cor-fundo);
+            margin: 10% auto;
+            padding: 20px;
+            border: 5px solid var(--cor-principal);
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+            color: var(--cor-texto-principal);
+            position: relative;
+        }
+
+        .close-button {
+            color: var(--cor-secundaria);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            cursor: pointer;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: var(--cor-principal);
+            text-decoration: none;
+        }
+
+        .modal-content h3 {
+            color: var(--cor-secundaria);
+            border-bottom: 2px solid var(--cor-principal);
+            padding-bottom: 5px;
+        }
+
+        .modal-content label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .modal-content input,
+        .modal-content select,
+        .modal-content textarea {
+            width: 95%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .modal-content button {
+            background-color: var(--cor-principal);
+            color: var(--cor-texto);
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .modal-content button:hover {
+            background-color: #CC7000;
+        }
+
+    </style>
+    <script>
+        // --- Base de Dados de Itens do Estoque (COMPLETA) ---
+        // CLASSIFICADA COM BASE NO PDF FORNECIDO PELO USUÁRIO.
+        const BASE_ITENS = {
+            
+            // ===========================================
+            // 1. PLACAS DE GESSO (STANDARD, RU, RF, TOP)
+            // ===========================================
+            // Placas 12,5mm (ST - Standard)
+            "92983": { nome: "CH V GYP ST BR12,5-120X180", tipo: "PLACA DE GESSO (ST/RU/RF)" }, 
+            "92986": { nome: "CH V GYP ST BR12,5-120X200", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94443": { nome: "CH V GYP ST BR12,5-120X200 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92989": { nome: "CH V GYP ST BR12,5-120X220", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94444": { nome: "CH V GYP ST BR12,5-120X220 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92991": { nome: "CH V GYP ST BR12,5-120X225", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92992": { nome: "CH V GYP ST BR12,5-120X230", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "294723": { nome: "CH V GYP ST BR12,5-120X230 OG", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92993": { nome: "CH V GYP ST BR12.5-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92999": { nome: "CH V GYP ST BR12,5-120X250", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "93003": { nome: "CH V GYP ST BR12,5-120X255", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "175304": { nome: "CH V GYP ST BR12,5-120X255 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "93008": { nome: "CH V GYP ST BR12,5-120X260", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94458": { nome: "CH V GYP ST BR12,5-120X260 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "93009": { nome: "CH V GYP ST BR12,5-120X261", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94460": { nome: "CH V GYP ST BR12,5-120X261 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "259325": { nome: "CH V GYP ST BR12,5-120X262 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "93012": { nome: "CH V GYP ST BR12,5-120X264", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "93013": { nome: "CH V GYP ST BR12,5-120X265", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "93014": { nome: "CH V GYP ST BR12,5-120X266", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "93018": { nome: "CH V GYP ST BR12,5-120X270", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94461": { nome: "CH V GYP ST BR12,5-120X270 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "140462": { nome: "CH V GYP ST BR12,5-120X271", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "145875": { nome: "CH V GYP ST BR12,5-120X271(OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "95763": { nome: "CH V GYP ST BR12,5-120X269 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "93022": { nome: "CH V GYP ST BR12,5-120X275", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "93025": { nome: "CH V GYP ST BR12,5-120X280", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94462": { nome: "CH V GYP ST BR12,5-120X280 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "175310": { nome: "CH V GYP ST BR12,5-120X285(OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "93031": { nome: "CH V GYP ST BR12,5-120X290", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94463": { nome: "CH V GYP ST BR12,5-120X290 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "163301": { nome: "CH V GYP ST BR12,5-120X292 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "302412": { nome: "CH V GYP ST BR12,5-120X298", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "93035": { nome: "CH V GYP ST BR12,5-120X300", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94474": { nome: "CH V GYP ST BR12,5-120X300 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            
+            // Placas 15,0mm (ST - Standard)
+            "140373": { nome: "CH V GYP RF BR15-120X180", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "140463": { nome: "CH V GYP ST BR15,0-120X180", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "165700": { nome: "CH V GYP ST BR15,0-120X180 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "140371": { nome: "CH V GYP ST BR15,0-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "167801": { nome: "CH V GYP ST BR15,0-120X240(OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "158405": { nome: "CH V GYP ST BR15,0-120X260", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "175306": { nome: "CH V GYP ST BR15,0-120X260(OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "143720": { nome: "CH V GYP ST BR15,0-120X271", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "163225": { nome: "CH V GYP ST BR15,0-120X271 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "281635": { nome: "CH V GYP ST BR15,0-120X270", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "213619": { nome: "CH V GYP ST BR15,0-120X300", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "300659": { nome: "CH V GYP ST15,0-120X300 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            
+            // Placas (RU - Resistente à Umidade)
+            "92939": { nome: "CH V GYP RU BR12,5-120X180", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94476": { nome: "CH V GYP RU BR12,5-120X180 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92940": { nome: "CH V GYP RU BR12,5-120X200", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94478": { nome: "CH V GYP RU BR12,5-120X200 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94172": { nome: "CH V GYP RU BR12,5-120X210", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92941": { nome: "CH V GYP RU BR12,5-120X220", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94479": { nome: "CH V GYP RU BR12,5-120X220 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92943": { nome: "CH V GYP RU BR12,5-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94477": { nome: "CH V GYP RU BR12,5-120X240 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92946": { nome: "CH V GYP RU BR12,5-120X250", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "145094": { nome: "CH V GYP RU BR12,5-120X250 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92950": { nome: "CH V GYP RU BR12,5-120X255", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "188282": { nome: "CH V GYP RU BR12,5-120X255 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92954": { nome: "CH V GYP RU BR12,5-120X260", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92955": { nome: "CH V GYP RU BR12,5-120X261", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94500": { nome: "CH V GYP RU BR12,5-120X261 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "259326": { nome: "CH V GYP RU BR12,5-120X262 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92959": { nome: "CH V GYP RU BR12,5-120X265", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92960": { nome: "CH V GYP RU BR12,5-120X266", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "291286": { nome: "CH V GYP RU BR12,5-120X266(OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92964": { nome: "CH V GYP RU BR12,5-120X270", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94501": { nome: "CH V GYP RU BR12,5-120X270 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92966": { nome: "CH V GYP RU BR12,5-120X273", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92967": { nome: "CH V GYP RU BR12,5-120X275", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "95762": { nome: "CH V GYP RU BR12,5-120X275 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "167805": { nome: "CH V GYP RU BR12,5-120X271(OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92970": { nome: "CH V GYP RU BR12,5-120X280", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94520": { nome: "CH V GYP RU BR12,5-120X280 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "92975": { nome: "CH V GYP RU BR12,5-120X290", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94521": { nome: "CH V GYP RU BR12,5-120X290 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "94522": { nome: "CH V GYP RU BR12,5-120X300 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "140464": { nome: "CH V GYP RU BR15-120X180", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "145093": { nome: "CH V GYP RU BR15-120X180 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "163303": { nome: "CH V GYP RU BR15-120X240 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "158404": { nome: "CH V GYP RU BR15-120X260", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "188283": { nome: "CH V GYP RU BR15-120X260 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            
+            // Placas (RF - Resistente a Fogo)
+            "140363": { nome: "CH V GYP RF BR12,5-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "145098": { nome: "CH V GYP RF BR12,5-120X240 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "140365": { nome: "CH V GYP RF BR12,5-120X260", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "299782": { nome: "CH V GYP RF BR12,5-120X275", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "140368": { nome: "CH V GYP RF BR12,5-120X280", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "188284": { nome: "CH V GYP RF BR12,5-120X280 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "140370": { nome: "CH V GYP RF BR12,5-120X300", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "145097": { nome: "CH V GYP RF BR12,5-120X180 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "140372": { nome: "CH V GYP RF BR15-120X180", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "145099": { nome: "CH V GYP RF BR15-120X180 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "140374": { nome: "CH V GYP RF BR15-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "163302": { nome: "CH V GYP RF BR15-120X240 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "276142": { nome: "CH V GYP RF BR15-120X208", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "175992": { nome: "CH V GYP RF BR15-120X220", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "299858": { nome: "CH V GYP RF BR15-120X260", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "175991": { nome: "CH V GYP RF BR15-120X270", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "249130": { nome: "CH V GYP RF BR15-120X270 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "157499": { nome: "CH V GYP RF BR15-120X280", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "160285": { nome: "CH V GYP RF BR15-120X300", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "175308": { nome: "CH V GYP RF BR15-120X300(OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            
+            // Outros Tipos de Placa de Gesso (Acoustic, Small, PROMAPRO+)
+            "168668": { nome: "CH V GYP ST TOP BR12,5-120X180", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "187780": { nome: "CH V GYP ST TOP BR12,5-120X180 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "287782": { nome: "CH V GYP ST TOP BR12,5-120X200", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "295816": { nome: "CH V GYP ST TOP BR12,5-120X200 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "254570": { nome: "CH V GYP ST TOP BR12,5-120X220", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "279128": { nome: "CH V GYP ST TOP BR12,5-1,20X220 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "307172": { nome: "CH V GYP TOP RU BR12,5-120X180", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "304393": { nome: "CH V PROMAPRO+ RF BR15,0-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "304394": { nome: "SFCV4 CH V PROMAPRO+ RF BR15,0-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "310191": { nome: "CH V GYP PROMAPRO+ RF12,5 BR12,5-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "315003": { nome: "CH V GYP PROMAPRO+ RF12,5 BR12,5-120X220", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "133559": { nome: "CHI SOM Q8N8 BR 12,5-1,20 X 2,40", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "162975": { nome: "CHI SOM Q12/25 BQ12,5-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "162976": { nome: "CHI SOM R12/25 BQ12,5-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "162977": { nome: "CH I SOM RA8/15 BQ12,5-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "146303": { nome: "CHI SOM R15N1 BR12,5-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "146301": { nome: "CHI SOM R15N8 BR12,5-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "313665": { nome: "CH GYP GWD BR12,5-120X240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "156838": { nome: "PLACA GYPSUM EST REF 12,5MM 1,20 X 2,4M", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "291194": { nome: "PLACA GYPLAC ST 1220X2440X12,7", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "292937": { nome: "PLACA GYPLAC ST 1220X2440X12,7 EB RXO", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "133846": { nome: "CHI GYP AQUABOARD BR12,5-120x240", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+            "295969": { nome: "CH I GYP AQUABOARD BR12,5-120X240 (OG)", tipo: "PLACA DE GESSO (ST/RU/RF)" },
+
+            // ===========================================
+            // 2. PLACAS CIMENTÍCIAS E ESPECIAIS
+            // ===========================================
+            "142685": { nome: "SUPERBOARD ST BQ 6MM 1200X2400", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "142686": { nome: "SUPERBOARD ST BQ 8MM 1200X2400", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "160254": { nome: "SUPERBOARD ST BQ 8MM 1200X2400 (OG)", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "142687": { nome: "SUPERBOARD ST BQ 10MM 1200X2400", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "142676": { nome: "SUPERBOARD ST BQ 10MM 1200X3000", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "295418": { nome: "SUPERBOARD ST BQ 10MM 1200X3000 OG", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "142678": { nome: "SUPERBOARD ST BQ 12MM 1200X2400", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "240038": { nome: "SUPERBOARD ST BQ 12MM 1200X2400 OG", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "142087": { nome: "SUPERBOARD SIDING LISO 200X2440X8MM BR", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "142089": { nome: "SUPERBOARD SIDING MADERA 200X2440X8MM BR", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "142109": { nome: "SUPERBOARD MADERA 1220X2440X8MM BR", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "175305": { nome: "SUPERBOARD MADERA 1220X2440X8MM BR(OG)", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "142677": { nome: "SUPERBOARD PRO BR 8MM 1200X2400", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "167804": { nome: "SUPERBOARD PRO BR 10MM 120X240(OG)", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "142084": { nome: "SUPERBOARD PRO BR 10MM 120X240", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "163927": { nome: "SUPERBOARD ESTANDAR 1220X2540X4MM BR", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "149934": { nome: "SUPERBOARD ST BQ 4mm 1220 X 2520", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "216265": { nome: "SUPERBOARD ST (BQ) 4MM 1,20M x 2,40M", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "224912": { nome: "SUPERBOARD IA ST (BQ) 6MM 1,20M x 2,40M", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "224913": { nome: "SUPERBOARD IA ST (BQ) 8MM 1,20M x 2,40M", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "224915": { nome: "SUPERBOARD IA ST (BQ) 10MM 1,20M x 2,40M", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "88043": { nome: "SUPERBOARD 2M40X1M20 10MM BORDA RETA", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "143016": { nome: "SUPERBOARD ENTREPISO 1220X2440X14 MM BR", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "111551": { nome: "PROMASTOPW -18m-coil 1 pc/box", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "49060": { nome: "PROMASTOP UNICOLLAR EXPORT 2250X50X12MM", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "291246": { nome: "PROMATECT H12 mm 1200X2400 mm (OG)", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "81975": { nome: "CEDRAL SIDING LISO NATURAL 2M40X0M20X8MM", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "168156": { nome: "MTO CEDRAL TRACE 3150X175X20 R EDG TR05", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "168171": { nome: "MTO CEDRAL TRACE 3150X175X20 TR05", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+            "168176": { nome: "MTO CEDRAL TRACE 3150X84,5X20 TR05", tipo: "PLACA CIMENTÍCIA/ESPECIAL" },
+
+            // ===========================================
+            // 3. ACESSÓRIOS E PERFIS
+            // ===========================================
+            // Fixadores e Parafusos
+            "4066966": { nome: "FIX IB GYP TA 3,5X25 CX 1.000", tipo: "ACESSÓRIOS E PERFIS" },
+            "4066968": { nome: "FIX IB GYP TA 3,5X45 CX 500", tipo: "ACESSÓRIOS E PERFIS" },
+            "4066969": { nome: "FIX IB GYP TB 3,5X25 CX 1.000", tipo: "ACESSÓRIOS E PERFIS" },
+            "4066970": { nome: "FIX IB GYP LB 4,2X13 CX 1.000", tipo: "ACESSÓRIOS E PERFIS" },
+            "4084641": { nome: "FIX GYP AQ TAHL 3,5X32 CX 400", tipo: "ACESSÓRIOS E PERFIS" },
+            
+            // Fitas e Telas
+            "4043834": { nome: "FITA CT 30M", tipo: "ACESSÓRIOS E PERFIS" },
+            "4043835": { nome: "FITA JT 150 M CX 10", tipo: "ACESSÓRIOS E PERFIS" },
+            "4043836": { nome: "ACAB R GYP FITA 48 BANDA A 10 CX 10", tipo: "ACESSÓRIOS E PERFIS" },
+            "4043837": { nome: "ACAB R GYP FITA 70 BANDA A 10 CX 10", tipo: "ACESSÓRIOS E PERFIS" },
+            "4043838": { nome: "ACAB R GYP FITA 90 BANDA A 10 CX 10", tipo: "ACESSÓRIOS E PERFIS" },
+            "4094219": { nome: "ACAB R GYP GWD TELA P/JUNTAS 20CMX50M RL", tipo: "ACESSÓRIOS E PERFIS" },
+            "4094217": { nome: "ACAB R GYP GWD TELA BASECOAT 1MX50M RL", tipo: "ACESSÓRIOS E PERFIS" },
+            "4066040": { nome: "CINTA BORDE VERDE REFORZADA IC", tipo: "ACESSÓRIOS E PERFIS" },
+            
+            // Perfis e Outros Acessórios
+            "4048659": { nome: "PER R GYP CANT 23X23 0,50 300", tipo: "ACESSÓRIOS E PERFIS" },
+            "4085759": { nome: "ACESS R GYP AQ PERFIL INICIO PVC 300", tipo: "ACESSÓRIOS E PERFIS" },
+            "4044121": { nome: "ACESS R GYP PLATINA 20 400MM", tipo: "ACESSÓRIOS E PERFIS" },
+            "4043804": { nome: "ACESS R GYP PLATINA 25 600MM", tipo: "ACESSÓRIOS E PERFIS" },
+            "4044263": { nome: "ACESS R GYP TIRANTE S/ELO 300 (100PC)", tipo: "ACESSÓRIOS E PERFIS" },
+            "4043819": { nome: "ACESS R GYP UNIÃO S47 200PCS", tipo: "ACESSÓRIOS E PERFIS" },
+            "4043818": { nome: "ACESS R GYP REG S47 200PCS", tipo: "ACESSÓRIOS E PERFIS" },
+            "167994": { nome: "PER V GYP MONT 90X35 0,50 250(OG)", tipo: "ACESSÓRIOS E PERFIS" },
+            "50093": { nome: "PSEAL-PL-SK 2,5 SK/G str.coil 25m/20mm", tipo: "ACESSÓRIOS E PERFIS" },
+            "4084949": { nome: "ARAME GALV ENCAPADO 18-PVC CX 20(ES)", tipo: "ACESSÓRIOS E PERFIS" },
+            
+            // ===========================================
+            // 4. QUÍMICOS E MASSAS
+            // ===========================================
+            "4577023": { nome: "GESSO RECICLADO", tipo: "QUÍMICOS E MASSAS" },
+            "296922": { nome: "CP R GYP MASSA PRONTA 25KG", tipo: "QUÍMICOS E MASSAS" },
+            "298833": { nome: "CP R GYP MASSA PRONTA 14 KG", tipo: "QUÍMICOS E MASSAS" },
+            "4087197": { nome: "CP R GYP MASSA PO 20KG", tipo: "QUÍMICOS E MASSAS" },
+            "93521": { nome: "CP V GYP MASSA PO 20Kg", tipo: "QUÍMICOS E MASSAS" },
+            "104772": { nome: "CP V GYP MASSA PO 20Kg (OG)", tipo: "QUÍMICOS E MASSAS" },
+            "4088092": { nome: "CP R GYP COLA 20KG", tipo: "QUÍMICOS E MASSAS" },
+            "93522": { nome: "CP V GYP COLA 20Kg", tipo: "QUÍMICOS E MASSAS" },
+            "164146": { nome: "CP V GYP COLA 20KG (OG)", tipo: "QUÍMICOS E MASSAS" },
+            "93524": { nome: "CP V GYP FGA COLA 20Kg", tipo: "QUÍMICOS E MASSAS" },
+            "93038": { nome: "CP V QUALIGESSOCOLA 20Kg", tipo: "QUÍMICOS E MASSAS" },
+            "165703": { nome: "CP V QUALIGESSOCOLA 20Kg (OG)", tipo: "QUÍMICOS E MASSAS" },
+            "93041": { nome: "CP V QUALIGESSOCOLA 5Kg", tipo: "QUÍMICOS E MASSAS" },
+            "149280": { nome: "MASSA PROMAT P/TRATAMENTO DE JUNTAS 20KG", tipo: "QUÍMICOS E MASSAS" },
+            "271453": { nome: "MASSA PROMAT P/TRAT DE JUNTAS 20KG OG", tipo: "QUÍMICOS E MASSAS" },
+            "167797": { nome: "CP I SB MASSA PRONTA P/JUNTAS 22KG (OG)", tipo: "QUÍMICOS E MASSAS" },
+            "295339": { nome: "MASILLA SUPERBOARD ENLUCIDO 30KG EXPO", tipo: "QUÍMICOS E MASSAS" },
+            "4089902": { nome: "PROMASEAL-A white 310 ml 12pc/box Rec", tipo: "QUÍMICOS E MASSAS" },
+
+            // ===========================================
+            // 5. OUTROS REVESTIMENTOS E MATERIAIS
+            // ===========================================
+            "166553": { nome: "SIMPLISIMA MAD VETEADA SOFT 6MM EXP 20UN", tipo: "OUTROS REVESTIMENTOS" },
+            "303538": { nome: "SIMPL MARM TRAVIATTA GRIS 6MM EXP 20UN", tipo: "OUTROS REVESTIMENTOS" },
+            "304940": { nome: "SIMPL PIE CALIZA CREMA 6MM EXP 20UN", tipo: "OUTROS REVESTIMENTOS" },
+            "304941": { nome: "SIMPL MAD RUSTICA NATURAL 6MM EXP 20UN", tipo: "OUTROS REVESTIMENTOS" },
+            "216396": { nome: "SIMPL MAD RÚSTICA NATURAL 6MM EXP 40UN", tipo: "OUTROS REVESTIMENTOS" },
+            "303533": { nome: "SIMPL CER MOSAICO AQUA 6MM EXP 20UN", tipo: "OUTROS REVESTIMENTOS" },
+            "303537": { nome: "SIMPL MARM CALACATTA OCRE 6MM EXP 20UN", tipo: "OUTROS REVESTIMENTOS" },
+            "303534": { nome: "SIMPL CER MOSAICO GRECCO 6MM EXP 20UN", tipo: "OUTROS REVESTIMENTOS" },
+            "4084788": { nome: "LA DE PET I 12,5X1,20M 15M² P/PERFIL 70M", tipo: "OUTROS REVESTIMENTOS" }
+        };
+        // FIM DA BASE DE DADOS DE ITENS
+
+        // --- Estrutura de Vagas (Vazia) ---
+        let vagasEstoque = {};
+        
+        // Definição das Áreas e Vagas Iniciais (Baseado no Excel)
+        const AREAS = [
+            "Ruas", "Superboard", "Congelados", "Segregação", "OG",
+            "Quarentena", "Triagem", "Pushback", "Pezinho"
+        ];
+        
+        // Inicializa as vagas. Capacidade e Ocupação são preenchidas no JS
+
+        // Função para calcular o % de ocupação do estoque
+        function calcularOcupacaoGeral() {
+            let totalCapacidade = 0;
+            let totalOcupado = 0;
+
+            for (const area in vagasEstoque) {
+                totalCapacidade += vagasEstoque[area].capacidadeTotal;
+                
+                // Soma a ocupação real de cada vaga dentro da área
+                for (const vagaID in vagasEstoque[area].vagas) {
+                    const vaga = vagasEstoque[area].vagas[vagaID];
+                    if (vaga.itens.length > 0) {
+                        totalOcupado += 1; // Contagem simples por vaga ocupada
+                    }
+                }
+            }
+
+            const percentual = totalCapacidade > 0 ? (totalOcupado / totalCapacidade) * 100 : 0;
+            const vagasLivres = totalCapacidade - totalOcupado;
+
+            // Atualiza o Dashboard
+            document.getElementById('total-ocupacao').textContent = `${percentual.toFixed(1)}% (${totalOcupado} de ${totalCapacidade} Vagas)`;
+            document.getElementById('progress-geral').style.width = `${percentual}%`;
+            document.getElementById('vagas-livres').textContent = `${vagasLivres} Vagas Livres`;
+
+            return { totalCapacidade, totalOcupado };
+        }
+
+        // Função para calcular o % por tipo de material
+        function calcularOcupacaoMaterial() {
+            const contagemMaterial = {};
+            const tiposMaterial = [
+                "PLACA DE GESSO (ST/RU/RF)", "PLACA CIMENTÍCIA/ESPECIAL", "ACESSÓRIOS E PERFIS", "QUÍMICOS E MASSAS", "OUTROS REVESTIMENTOS"
+            ];
+
+            tiposMaterial.forEach(tipo => contagemMaterial[tipo] = 0);
+            
+            let totalItens = 0; // Contagem total de quantidades (Un/Pallets/Kg)
+
+            for (const area in vagasEstoque) {
+                for (const vagaID in vagasEstoque[area].vagas) {
+                    const vaga = vagasEstoque[area].vagas[vagaID];
+                    vaga.itens.forEach(item => {
+                        const infoItem = BASE_ITENS[item.codigo];
+                        if (infoItem && tiposMaterial.includes(infoItem.tipo)) {
+                            // Soma a quantidade (Un/Pallets/Kg)
+                            contagemMaterial[infoItem.tipo] += item.quantidade || 0; 
+                            totalItens += item.quantidade || 0;
+                        }
+                    });
+                }
+            }
+
+            const dashboardMaterial = document.getElementById('dashboard-material');
+            dashboardMaterial.innerHTML = '<h3>% por Tipo de Material (em Qtd.)</h3>';
+
+            const tiposParaExibir = tiposMaterial;
+
+            tiposParaExibir.forEach(tipo => {
+                const qtd = contagemMaterial[tipo];
+                const percentual = totalItens > 0 ? (qtd / totalItens) * 100 : 0;
+                
+                const card = document.createElement('div');
+                card.className = 'card-dashboard';
+                card.innerHTML = `
+                    <h4>${tipo.split(' (')[0].replace('/', '/<br>')}</h4>
+                    <p>Qtd: ${qtd.toFixed(1)} | ${percentual.toFixed(1)}%</p>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: ${percentual.toFixed(1)}%; background-color: var(--cor-ocupado);"></div>
+                    </div>
+                `;
+                dashboardMaterial.appendChild(card);
+            });
+        }
+
+
+        // Função para renderizar o layout das áreas e vagas (CORRIGIDA PARA ORDENAR RUAS)
+        function renderizarLayout() {
+            const container = document.getElementById('layout-areas');
+            container.innerHTML = ''; // Limpa o container
+
+            AREAS.forEach(areaNome => {
+                const areaDiv = document.createElement('div');
+                areaDiv.className = 'area';
+                areaDiv.innerHTML = `<h2 onclick="toggleArea('${areaNome}')">${areaNome} (Capacidade: ${vagasEstoque[areaNome].capacidadeTotal} Vagas)</h2>`;
+
+                const ruasContainer = document.createElement('div');
+                ruasContainer.id = `ruas-${areaNome.toLowerCase().replace(/\s/g, '-')}`;
+                ruasContainer.className = 'ruas-container';
+
+                // Adicionar botão de 'Criar Vaga/Rua'
+                const btnCriarVaga = document.createElement('button');
+                btnCriarVaga.textContent = `+ Criar Vaga/Rua em ${areaNome}`;
+                btnCriarVaga.onclick = () => abrirModalNovaVaga(areaNome);
+                btnCriarVaga.style.backgroundColor = '#666';
+                btnCriarVaga.style.color = 'white';
+                btnCriarVaga.style.border = 'none';
+                btnCriarVaga.style.padding = '8px 12px';
+                btnCriarVaga.style.borderRadius = '4px';
+                btnCriarVaga.style.cursor = 'pointer';
+                btnCriarVaga.style.marginBottom = '10px';
+                btnCriarVaga.style.marginRight = '10px';
+
+                areaDiv.appendChild(btnCriarVaga);
+                areaDiv.appendChild(ruasContainer);
+
+
+                // Renderiza as vagas existentes
+                const vagasArea = vagasEstoque[areaNome].vagas;
+                
+                // CORREÇÃO: Ordenação das vagas pelo nome da rua (ordem natural)
+                const vagasOrdenadas = Object.values(vagasArea).sort((a, b) => {
+                    return a.nomeRua.localeCompare(b.nomeRua, undefined, { numeric: true, sensitivity: 'base' });
+                });
+
+                vagasOrdenadas.forEach(vaga => {
+                    const vagaID = vaga.id;
+                    const vagaDiv = document.createElement('div');
+                    vagaDiv.className = `vaga ${vaga.itens.length > 0 ? 'ocupada' : ''}`;
+                    vagaDiv.id = vagaID;
+                    vagaDiv.onclick = () => abrirModalVaga(vagaID, vaga);
+                    
+                    let resumoItem = 'Vaga Vazia';
+                    if (vaga.itens.length > 0) {
+                        const itemPrincipal = vaga.itens[0];
+                        const info = BASE_ITENS[itemPrincipal.codigo] || { nome: 'Item Desconhecido' };
+                        resumoItem = `${info.nome.split(' ')[0]}... - Qtd: ${itemPrincipal.quantidade} - Status: ${itemPrincipal.status}`;
+                    }
+
+                    vagaDiv.innerHTML = `
+                        <h4>${vaga.nomeRua}</h4>
+                        <div class="vaga-info">
+                            <p>${resumoItem}</p>
+                            <p>Capacidade: ${vaga.capacidade}</p>
+                        </div>
+                    `;
+                    ruasContainer.appendChild(vagaDiv);
+                });
+
+                container.appendChild(areaDiv);
+            });
+            
+            // Recalcula o dashboard após a renderização
+            calcularOcupacaoGeral();
+            calcularOcupacaoMaterial();
+            salvarVagas();
+        }
+
+        // Função para mostrar/esconder o conteúdo da área
+        function toggleArea(areaNome) {
+            const ruasContainer = document.getElementById(`ruas-${areaNome.toLowerCase().replace(/\s/g, '-')}`);
+            // Alterna o estado de exibição
+            if (ruasContainer.style.display === 'flex') {
+                ruasContainer.style.display = 'none';
+            } else {
+                 ruasContainer.style.display = 'flex';
+            }
+        }
+
+        // --- Funções do Modal (Nova Vaga) ---
+        function abrirModalNovaVaga(areaNome) {
+            const modal = document.getElementById('modal-vaga');
+            const titulo = document.getElementById('modal-vaga-titulo');
+            const form = document.getElementById('form-vaga');
+            
+            titulo.textContent = `Criar Nova Vaga/Rua em ${areaNome}`;
+            document.getElementById('vaga-id').value = '';
+            document.getElementById('campo-nome-rua').value = '';
+            document.getElementById('campo-capacidade').value = 1; // Capacidade padrão
+            document.getElementById('area-associada').value = areaNome;
+            document.getElementById('campo-itens-container').innerHTML = '';
+            document.getElementById('btn-adicionar-item').style.display = 'none'; // Esconde para nova vaga
+            document.getElementById('btn-remover-vaga').style.display = 'none';
+
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                salvarNovaVaga();
+            };
+            modal.style.display = 'block';
+        }
+
+        function salvarNovaVaga() {
+            const areaNome = document.getElementById('area-associada').value;
+            const nomeRua = document.getElementById('campo-nome-rua').value;
+            const capacidade = parseInt(document.getElementById('campo-capacidade').value);
+            const vagaID = areaNome.toLowerCase().replace(/\s/g, '-') + '-' + nomeRua.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, ''); // Limpa caracteres especiais
+            
+            if (vagasEstoque[areaNome].vagas[vagaID]) {
+                alert('Vaga/Rua com este nome já existe nesta área!');
+                return;
+            }
+
+            vagasEstoque[areaNome].vagas[vagaID] = {
+                id: vagaID,
+                nomeRua: nomeRua,
+                capacidade: capacidade,
+                itens: [] // Vaga nova começa vazia
+            };
+
+            vagasEstoque[areaNome].capacidadeTotal += capacidade;
+            
+            fecharModal();
+            renderizarLayout();
+        }
+
+        // --- Funções do Modal (Edição/Preenchimento de Vaga) ---
+        function abrirModalVaga(vagaID, vaga) {
+            const modal = document.getElementById('modal-vaga');
+            const titulo = document.getElementById('modal-vaga-titulo');
+            const form = document.getElementById('form-vaga');
+            
+            titulo.textContent = `Vaga/Rua: ${vaga.nomeRua}`;
+            document.getElementById('vaga-id').value = vagaID;
+            document.getElementById('campo-nome-rua').value = vaga.nomeRua;
+            document.getElementById('campo-capacidade').value = vaga.capacidade;
+            document.getElementById('area-associada').value = Object.keys(vagasEstoque).find(area => vagasEstoque[area].vagas[vagaID]);
+            document.getElementById('btn-adicionar-item').style.display = 'inline-block';
+            document.getElementById('btn-remover-vaga').style.display = 'inline-block';
+            document.getElementById('btn-remover-vaga').onclick = () => removerVaga(vagaID);
+
+            renderizarItensModal(vaga.itens);
+
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                salvarVagaEditada(vagaID);
+            };
+            modal.style.display = 'block';
+        }
+        
+        function removerVaga(vagaID) {
+            if (!confirm("Tem certeza que deseja remover esta vaga? Todos os itens serão perdidos.")) {
+                return;
+            }
+            
+            const areaNome = Object.keys(vagasEstoque).find(area => vagasEstoque[area].vagas[vagaID]);
+            if (areaNome) {
+                const capacidadeRemovida = vagasEstoque[areaNome].vagas[vagaID].capacidade;
+                delete vagasEstoque[areaNome].vagas[vagaID];
+                vagasEstoque[areaNome].capacidadeTotal -= capacidadeRemovida;
+                fecharModal();
+                renderizarLayout();
+            }
+        }
+
+        function salvarVagaEditada(vagaID) {
+            const areaNome = document.getElementById('area-associada').value;
+            const vaga = vagasEstoque[areaNome].vagas[vagaID];
+            
+            const novaCapacidade = parseInt(document.getElementById('campo-capacidade').value);
+            const nomeRua = document.getElementById('campo-nome-rua').value;
+
+            // Atualiza a capacidade total da área
+            vagasEstoque[areaNome].capacidadeTotal -= vaga.capacidade;
+            vagasEstoque[areaNome].capacidadeTotal += novaCapacidade;
+
+            // Atualiza a vaga
+            vaga.capacidade = novaCapacidade;
+            vaga.nomeRua = nomeRua;
+            
+            // Reconstroi a lista de itens do formulário
+            const itensContainer = document.getElementById('campo-itens-container');
+            const itensForms = itensContainer.querySelectorAll('.item-form');
+            const novosItens = [];
+
+            itensForms.forEach(itemForm => {
+                const item = {};
+                item.codigo = itemForm.querySelector('.item-codigo').value.toUpperCase(); // Garante o código em maiúsculas
+                item.quantidade = parseFloat(itemForm.querySelector('.item-quantidade').value) || 0;
+                item.lote = itemForm.querySelector('.item-lote').value;
+                item.validade = itemForm.querySelector('.item-validade').value;
+                item.status = itemForm.querySelector('.item-status').value;
+                item.observacao = itemForm.querySelector('.item-observacao').value;
+
+                if (item.codigo) {
+                    novosItens.push(item);
+                }
+            });
+
+            vaga.itens = novosItens;
+            
+            fecharModal();
+            renderizarLayout();
+        }
+
+        function renderizarItensModal(itens) {
+            const container = document.getElementById('campo-itens-container');
+            container.innerHTML = '';
+            
+            if (itens.length === 0) {
+                container.innerHTML = '<p>Nenhum item nesta vaga.</p>';
+            }
+
+            itens.forEach((item, index) => {
+                const itemDiv = criarFormItem(index, item);
+                container.appendChild(itemDiv);
+            });
+        }
+        
+        function adicionarItem() {
+            const container = document.getElementById('campo-itens-container');
+            const novoIndex = container.querySelectorAll('.item-form').length;
+            const novoItemDiv = criarFormItem(novoIndex, { 
+                codigo: '', quantidade: 0, lote: '', validade: '', status: 'Liberado', observacao: '' 
+            });
+            container.appendChild(novoItemDiv);
+            
+            // Remove a mensagem de "Nenhum item" se existir
+            const msgVazio = container.querySelector('p');
+            if (msgVazio && msgVazio.textContent === 'Nenhum item nesta vaga.') {
+                msgVazio.remove();
+            }
+        }
+
+        function criarFormItem(index, item) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item-form';
+            itemDiv.style.border = '1px dashed #ccc';
+            itemDiv.style.padding = '10px';
+            itemDiv.style.marginTop = '15px';
+            itemDiv.id = `item-form-${index}`;
+            
+            const nomeMaterial = BASE_ITENS[item.codigo.toUpperCase()] ? BASE_ITENS[item.codigo.toUpperCase()].nome : 'Nome do Material (Desconhecido)';
+            
+            itemDiv.innerHTML = `
+                <h4>Item ${index + 1}: ${nomeMaterial}</h4>
+                <label>Código:</label>
+                <input type="text" class="item-codigo" value="${item.codigo}" onchange="atualizarNomeMaterial(this, ${index})" required>
+
+                <label>Nome do Material (Automático):</label>
+                <input type="text" class="item-nome-material" value="${nomeMaterial}" disabled>
+                
+                <label>Quantidade (Un/Pallets/Kg):</label>
+                <input type="number" step="any" class="item-quantidade" value="${item.quantidade}" required>
+                
+                <label>Lote:</label>
+                <input type="text" class="item-lote" value="${item.lote}">
+                
+                <label>Validade:</label>
+                <input type="date" class="item-validade" value="${item.validade}">
+                
+                <label>Status:</label>
+                <select class="item-status" required>
+                    <option value="Liberado" ${item.status === 'Liberado' ? 'selected' : ''}>Liberado</option>
+                    <option value="Na fila do FIFO" ${item.status === 'Na fila do FIFO' ? 'selected' : ''}>Na fila do FIFO</option>
+                    <option value="Bloqueado" ${item.status === 'Bloqueado' ? 'selected' : ''}>Bloqueado</option>
+                    <option value="Bloqueado QA" ${item.status === 'Bloqueado QA' ? 'selected' : ''}>Bloqueado QA</option>
+                    <option value="Em cura" ${item.status === 'Em cura' ? 'selected' : ''}>Em cura</option>
+                </select>
+                
+                <label>Observação:</label>
+                <textarea class="item-observacao">${item.observacao}</textarea>
+                
+                <button type="button" onclick="removerItem(${index})" style="background-color: #CC0000; margin-top: 10px;">Remover Item</button>
+            `;
+            return itemDiv;
+        }
+
+        function atualizarNomeMaterial(inputElement, index) {
+            const codigo = inputElement.value.toUpperCase();
+            const itemInfo = BASE_ITENS[codigo];
+            const itemDiv = document.getElementById(`item-form-${index}`);
+            
+            let nome = 'Nome do Material (Desconhecido)';
+            if (itemInfo) {
+                nome = itemInfo.nome;
+            }
+            
+            itemDiv.querySelector('.item-nome-material').value = nome;
+            itemDiv.querySelector('h4').textContent = `Item ${index + 1}: ${nome.split(' ')[0]}...`; // Atualiza o título resumido
+        }
+        
+        function removerItem(index) {
+            const container = document.getElementById('campo-itens-container');
+            const itemParaRemover = document.getElementById(`item-form-${index}`);
+            if (itemParaRemover) {
+                itemParaRemover.remove();
+            }
+            
+            // Se ficar vazio, adiciona a mensagem
+            if (container.querySelectorAll('.item-form').length === 0) {
+                 container.innerHTML = '<p>Nenhum item nesta vaga.</p>';
+            }
+        }
+
+
+        function fecharModal() {
+            document.getElementById('modal-vaga').style.display = 'none';
+        }
+
+        // --- Persistência de Dados (Local Storage) ---
+        function salvarVagas() {
+            localStorage.setItem('layoutEtexSTC', JSON.stringify(vagasEstoque));
+        }
+
+        function carregarVagas() {
+            const dadosSalvos = localStorage.getItem('layoutEtexSTC');
+            if (dadosSalvos) {
+                vagasEstoque = JSON.parse(dadosSalvos);
+                // Garante que todas as áreas estão na estrutura, mesmo que novas áreas sejam adicionadas
+                AREAS.forEach(area => {
+                    if (!vagasEstoque[area]) {
+                        vagasEstoque[area] = { capacidadeTotal: 0, vagas: {} };
+                    }
+                });
+            } else {
+                // --- INICIALIZAÇÃO COM DADOS DA PLANILHA DO USUÁRIO ---
+                
+                // Dados extraídos e estruturados da planilha "Layout Padrão"
+                const dadosIniciaisPlanilha = [
+                    // Área: Ruas (1 a 31) - Exemplo de Estrutura Inicial (Capacidade: 10)
+                    { area: "Ruas", nomeRua: "Rua 01", capacidade: 10, codigo: "92993", quantidade: 8, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 02", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 03", capacidade: 10, codigo: "140365", quantidade: 5, lote: "2024-002", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 04", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 05", capacidade: 10, codigo: "92970", quantidade: 10, lote: "2024-003", status: "Bloqueado QA", validade: "2026-01-01", observacao: "Aguardando inspeção de qualidade." },
+                    { area: "Ruas", nomeRua: "Rua 06", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 07", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 08", capacidade: 10, codigo: "140365", quantidade: 5, lote: "2024-002", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 09", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 10", capacidade: 10, codigo: "92970", quantidade: 10, lote: "2024-003", status: "Bloqueado QA", validade: "2026-01-01", observacao: "Aguardando inspeção de qualidade." },
+                    { area: "Ruas", nomeRua: "Rua 11", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 12", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 13", capacidade: 10, codigo: "140365", quantidade: 5, lote: "2024-002", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 14", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 15", capacidade: 10, codigo: "92970", quantidade: 10, lote: "2024-003", status: "Bloqueado QA", validade: "2026-01-01", observacao: "Aguardando inspeção de qualidade." },
+                    { area: "Ruas", nomeRua: "Rua 16", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 17", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 18", capacidade: 10, codigo: "140365", quantidade: 5, lote: "2024-002", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 19", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 20", capacidade: 10, codigo: "92970", quantidade: 10, lote: "2024-003", status: "Bloqueado QA", validade: "2026-01-01", observacao: "Aguardando inspeção de qualidade." },
+                    { area: "Ruas", nomeRua: "Rua 21", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 22", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 23", capacidade: 10, codigo: "140365", quantidade: 5, lote: "2024-002", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 24", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 25", capacidade: 10, codigo: "92970", quantidade: 10, lote: "2024-003", status: "Bloqueado QA", validade: "2026-01-01", observacao: "Aguardando inspeção de qualidade." },
+                    { area: "Ruas", nomeRua: "Rua 26", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 27", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 28", capacidade: 10, codigo: "140365", quantidade: 5, lote: "2024-002", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 29", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
+                    { area: "Ruas", nomeRua: "Rua 30", capacidade: 10, codigo: "92970", quantidade: 10, lote: "2024-003", status: "Bloqueado QA", validade: "2026-01-01", observacao: "Aguardando inspeção de qualidade." },
+                    { area: "Ruas", nomeRua: "Rua 31", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
+                    
+                    // Área: Superboard (Área PB)
+                    { area: "Superboard", nomeRua: "Área PB 1", capacidade: 100, codigo: "142687", quantidade: 80, lote: "SB-2024-010", status: "Em cura", validade: "2026-01-01", observacao: "Em período de cura padrão" },
+                    { area: "Superboard", nomeRua: "Área PB 2", capacidade: 100, codigo: "142678", quantidade: 100, lote: "SB-2024-011", status: "Bloqueado", validade: "2026-01-01", observacao: "Bloqueado por desvio de cor." },
+                    
+                    // Área: Segregação
+                    { area: "Segregação", nomeRua: "Segregação 1", capacidade: 5, codigo: "4066970", quantidade: 1, lote: "2024-ACESS", status: "Liberado", validade: "", observacao: "Caixa de parafusos" },
+                    
+                    // Área: Pushback
+                    { area: "Pushback", nomeRua: "Pushback 1A", capacidade: 15, codigo: "93025", quantidade: 15, lote: "PB-2024-001", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
+                    { area: "Pushback", nomeRua: "Pushback 1B", capacidade: 15, codigo: "93025", quantidade: 10, lote: "PB-2024-002", status: "Liberado", validade: "2026-01-01", observacao: "" },
+                    
+                    // Área: Pezinho
+                    { area: "Pezinho", nomeRua: "Pezinho 01", capacidade: 1, codigo: "4577023", quantidade: 200, lote: "GS-2024-01", status: "Liberado", validade: "", observacao: "Gesso Reciclado (Kg)" },
+                ];
+
+
+                // Garante que todas as áreas iniciais existem
+                AREAS.forEach(area => {
+                    vagasEstoque[area] = { capacidadeTotal: 0, vagas: {} };
+                });
+
+                // Processa os dados iniciais
+                dadosIniciaisPlanilha.forEach(dados => {
+                    const areaNome = dados.area;
+                    const nomeRua = dados.nomeRua;
+                    
+                    if (!vagasEstoque[areaNome]) {
+                        // Isso garante que áreas não mapeadas inicialmente também sejam criadas se houver dados para elas.
+                        vagasEstoque[areaNome] = { capacidadeTotal: 0, vagas: {} };
+                    }
+                    
+                    const vagaID = areaNome.toLowerCase().replace(/\s/g, '-') + '-' + nomeRua.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '');
+
+                    // Cria a vaga
+                    if (!vagasEstoque[areaNome].vagas[vagaID]) {
+                         vagasEstoque[areaNome].vagas[vagaID] = {
+                            id: vagaID,
+                            nomeRua: nomeRua,
+                            capacidade: dados.capacidade,
+                            itens: []
+                        };
+                         vagasEstoque[areaNome].capacidadeTotal += dados.capacidade;
+                    }
+                    
+                    // Adiciona o item (se houver código e quantidade)
+                    if (dados.codigo && dados.quantidade > 0) {
+                         vagasEstoque[areaNome].vagas[vagaID].itens.push({
+                            codigo: dados.codigo,
+                            quantidade: dados.quantidade,
+                            lote: dados.lote,
+                            validade: dados.validade,
+                            status: dados.status,
+                            observacao: dados.observacao
+                        });
+                    }
+                });
+            }
+        }
+
+
+        // --- Inicialização ---
+        window.onload = () => {
+            carregarVagas();
+            renderizarLayout();
+
+            // Configura o botão de fechar do modal
+            document.querySelector('.close-button').onclick = fecharModal;
+            window.onclick = (event) => {
+                const modal = document.getElementById('modal-vaga');
+                if (event.target === modal) {
+                    fecharModal();
+                }
+            };
+        };
+    </script>
+</head>
+<body>
+
+    <header>
+        <h1>Layout Etex STC</h1>
+        <p>Sistema de Vagas e Ocupação de Estoque</p>
+    </header>
+
+    <main>
+        
+        <section id="dashboard">
+            <div class="card-dashboard">
+                <h3>Ocupação Geral do Estoque</h3>
+                <p id="total-ocupacao">0% (0 de 0 Vagas)</p>
+                <div class="progress-bar-container">
+                    <div id="progress-geral" class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <p id="vagas-livres" style="font-size: 0.9em; margin-top: 10px;">0 Vagas Livres</p>
+            </div>
+            
+            <div id="dashboard-material" style="display: flex; flex-wrap: wrap; gap: 20px; flex-grow: 3;">
+                </div>
+        </section>
+
+        <hr>
+
+        <section id="layout-areas">
+            </section>
+
+    </main>
+    
+    <div id="modal-vaga" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3 id="modal-vaga-titulo">Vaga/Rua</h3>
+            
+            <form id="form-vaga">
+                <input type="hidden" id="vaga-id">
+                <input type="hidden" id="area-associada">
+                
+                <label for="campo-nome-rua">Nome da Vaga/Rua:</label>
+                <input type="text" id="campo-nome-rua" required>
+                
+                <label for="campo-capacidade">Capacidade (Unidades/Pallets de Vaga):</label>
+                <input type="number" id="campo-capacidade" min="1" required>
+
+                <hr style="margin: 20px 0;">
+                
+                <h4>Itens na Vaga</h4>
+                <div id="campo-itens-container">
+                    </div>
+                
+                <button type="button" id="btn-adicionar-item" onclick="adicionarItem()">+ Adicionar Item</button>
+                <button type="button" id="btn-remover-vaga" style="background-color: #CC0000;">Remover Vaga</button>
+                <button type="submit">Salvar Vaga</button>
+                
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
