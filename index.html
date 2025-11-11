@@ -80,7 +80,7 @@
             box-sizing: border-box;
         }
 
-        /* --- Layout de Áreas --- */
+        /* --- Layout de Áreas (em Tabela, como planilha) --- */
         #layout-areas {
             display: grid;
             gap: 20px;
@@ -99,47 +99,48 @@
             border-bottom: 2px solid var(--cor-principal);
             padding-bottom: 5px;
             margin-top: 0;
-            cursor: pointer; /* Para indicar que é clicável (esconder/mostrar) */
+            cursor: pointer;
         }
 
-        .ruas-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+        .tabela-vagas {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 15px;
         }
 
-        /* Estilo da "Vaga" (Rua) */
-        .vaga {
-            background-color: var(--cor-vazio);
+        .tabela-vagas th, .tabela-vagas td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .tabela-vagas th {
+            background-color: var(--cor-secundaria);
             color: var(--cor-texto);
-            padding: 10px;
-            border-radius: 4px;
-            width: 150px;
-            border: 1px solid var(--cor-secundaria);
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            white-space: nowrap; /* Evita quebra de linha no cabeçalho */
+        }
+
+        /* Linha da Vaga */
+        .tabela-vagas tr {
             cursor: pointer;
             transition: background-color 0.3s;
-            box-sizing: border-box;
         }
 
-        .vaga.ocupada {
-            background-color: var(--cor-ocupado);
-            color: var(--cor-secundaria);
-            font-weight: bold;
+        .tabela-vagas tr:hover {
+            background-color: #ffe8cc; /* Cor de hover suave */
         }
 
-        .vaga:hover {
-            opacity: 0.9;
+        .vaga-ocupada {
+            background-color: #fff7e6; /* Fundo mais claro para ocupadas */
         }
-
-        .vaga h4 {
-            margin: 0 0 5px 0;
-            font-size: 1em;
-        }
-
-        .vaga-info {
-            font-size: 0.8em;
-        }
+        
+        .status-liberado { color: #28a745; font-weight: bold; }
+        .status-na-fila-do-fifo { color: #007bff; font-weight: bold; }
+        .status-bloqueado, .status-bloqueado-qa { color: #dc3545; font-weight: bold; }
+        .status-em-cura { color: #ffc107; font-weight: bold; }
 
         /* --- Modal de Edição/Visualização --- */
         .modal {
@@ -220,6 +221,11 @@
 
         .modal-content button:hover {
             background-color: #CC7000;
+        }
+
+        /* Estilo para itens dentro do modal */
+        .item-form {
+             margin-bottom: 20px;
         }
 
     </style>
@@ -547,9 +553,9 @@
                 card.className = 'card-dashboard';
                 card.innerHTML = `
                     <h4>${tipo.split(' (')[0].replace('/', '/<br>')}</h4>
-                    <p>Qtd: ${qtd.toFixed(1)} | ${percentual.toFixed(1)}%</p>
+                    <p>Qtd: ${qtd.toFixed(0)} | ${percentual.toFixed(1)}%</p>
                     <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: ${percentual.toFixed(1)}%; background-color: var(--cor-ocupado);"></div>
+                        <div class="progress-bar" style="width: ${percentual.toFixed(1)}%; background-color: var(--cor-principal);"></div>
                     </div>
                 `;
                 dashboardMaterial.appendChild(card);
@@ -557,7 +563,7 @@
         }
 
 
-        // Função para renderizar o layout das áreas e vagas (CORRIGIDA PARA ORDENAR RUAS)
+        // Função para renderizar o layout das áreas e vagas (AGORA EM FORMATO DE TABELA)
         function renderizarLayout() {
             const container = document.getElementById('layout-areas');
             container.innerHTML = ''; // Limpa o container
@@ -566,10 +572,6 @@
                 const areaDiv = document.createElement('div');
                 areaDiv.className = 'area';
                 areaDiv.innerHTML = `<h2 onclick="toggleArea('${areaNome}')">${areaNome} (Capacidade: ${vagasEstoque[areaNome].capacidadeTotal} Vagas)</h2>`;
-
-                const ruasContainer = document.createElement('div');
-                ruasContainer.id = `ruas-${areaNome.toLowerCase().replace(/\s/g, '-')}`;
-                ruasContainer.className = 'ruas-container';
 
                 // Adicionar botão de 'Criar Vaga/Rua'
                 const btnCriarVaga = document.createElement('button');
@@ -583,14 +585,39 @@
                 btnCriarVaga.style.cursor = 'pointer';
                 btnCriarVaga.style.marginBottom = '10px';
                 btnCriarVaga.style.marginRight = '10px';
-
                 areaDiv.appendChild(btnCriarVaga);
-                areaDiv.appendChild(ruasContainer);
 
+
+                const tableContainer = document.createElement('div');
+                tableContainer.id = `ruas-${areaNome.toLowerCase().replace(/\s/g, '-')}`;
+                tableContainer.style.display = 'block'; // Começa visível
+                
+                const tabela = document.createElement('table');
+                tabela.className = 'tabela-vagas';
+                tabela.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Área/Rua</th>
+                            <th>Capacidade (Vagas)</th>
+                            <th>Código</th>
+                            <th>Produto</th>
+                            <th>Quantidade</th>
+                            <th>Lote</th>
+                            <th>Validade</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                `;
+                tableContainer.appendChild(tabela);
+
+                areaDiv.appendChild(tableContainer);
 
                 // Renderiza as vagas existentes
                 const vagasArea = vagasEstoque[areaNome].vagas;
-                
+                const tbody = tabela.querySelector('tbody');
+
                 // CORREÇÃO: Ordenação das vagas pelo nome da rua (ordem natural)
                 const vagasOrdenadas = Object.values(vagasArea).sort((a, b) => {
                     return a.nomeRua.localeCompare(b.nomeRua, undefined, { numeric: true, sensitivity: 'base' });
@@ -598,26 +625,30 @@
 
                 vagasOrdenadas.forEach(vaga => {
                     const vagaID = vaga.id;
-                    const vagaDiv = document.createElement('div');
-                    vagaDiv.className = `vaga ${vaga.itens.length > 0 ? 'ocupada' : ''}`;
-                    vagaDiv.id = vagaID;
-                    vagaDiv.onclick = () => abrirModalVaga(vagaID, vaga);
+                    const isOcupada = vaga.itens.length > 0;
+                    const itemPrincipal = isOcupada ? vaga.itens[0] : {};
+                    const infoItem = BASE_ITENS[itemPrincipal.codigo] || { nome: 'VAGA VAZIA' };
                     
-                    let resumoItem = 'Vaga Vazia';
-                    if (vaga.itens.length > 0) {
-                        const itemPrincipal = vaga.itens[0];
-                        const info = BASE_ITENS[itemPrincipal.codigo] || { nome: 'Item Desconhecido' };
-                        resumoItem = `${info.nome.split(' ')[0]}... - Qtd: ${itemPrincipal.quantidade} - Status: ${itemPrincipal.status}`;
+                    let statusClass = '';
+                    if (itemPrincipal.status) {
+                        statusClass = 'status-' + itemPrincipal.status.toLowerCase().replace(/\s/g, '-').replace(' ', '-');
                     }
 
-                    vagaDiv.innerHTML = `
-                        <h4>${vaga.nomeRua}</h4>
-                        <div class="vaga-info">
-                            <p>${resumoItem}</p>
-                            <p>Capacidade: ${vaga.capacidade}</p>
-                        </div>
+                    const tr = document.createElement('tr');
+                    tr.className = isOcupada ? 'vaga-ocupada' : '';
+                    tr.onclick = () => abrirModalVaga(vagaID, vaga);
+                    
+                    tr.innerHTML = `
+                        <td>${vaga.nomeRua}</td>
+                        <td>${vaga.capacidade}</td>
+                        <td>${isOcupada ? itemPrincipal.codigo : ''}</td>
+                        <td>${isOcupada ? infoItem.nome : 'VAGA VAZIA'}</td>
+                        <td>${isOcupada ? itemPrincipal.quantidade : '0'}</td>
+                        <td>${isOcupada ? itemPrincipal.lote : ''}</td>
+                        <td>${isOcupada && itemPrincipal.validade ? itemPrincipal.validade : ''}</td>
+                        <td class="${statusClass}">${isOcupada ? itemPrincipal.status : 'LIVRE'}</td>
                     `;
-                    ruasContainer.appendChild(vagaDiv);
+                    tbody.appendChild(tr);
                 });
 
                 container.appendChild(areaDiv);
@@ -631,12 +662,12 @@
 
         // Função para mostrar/esconder o conteúdo da área
         function toggleArea(areaNome) {
-            const ruasContainer = document.getElementById(`ruas-${areaNome.toLowerCase().replace(/\s/g, '-')}`);
+            const tableContainer = document.getElementById(`ruas-${areaNome.toLowerCase().replace(/\s/g, '-')}`);
             // Alterna o estado de exibição
-            if (ruasContainer.style.display === 'flex') {
-                ruasContainer.style.display = 'none';
+            if (tableContainer.style.display === 'table' || tableContainer.style.display === 'block') {
+                tableContainer.style.display = 'none';
             } else {
-                 ruasContainer.style.display = 'flex';
+                 tableContainer.style.display = 'block';
             }
         }
 
@@ -666,7 +697,8 @@
             const areaNome = document.getElementById('area-associada').value;
             const nomeRua = document.getElementById('campo-nome-rua').value;
             const capacidade = parseInt(document.getElementById('campo-capacidade').value);
-            const vagaID = areaNome.toLowerCase().replace(/\s/g, '-') + '-' + nomeRua.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, ''); // Limpa caracteres especiais
+            // Gera um ID único e seguro baseado no nome
+            const vagaID = areaNome.toLowerCase().replace(/\s/g, '-') + '-' + nomeRua.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '');
             
             if (vagasEstoque[areaNome].vagas[vagaID]) {
                 alert('Vaga/Rua com este nome já existe nesta área!');
@@ -849,7 +881,7 @@
             }
             
             itemDiv.querySelector('.item-nome-material').value = nome;
-            itemDiv.querySelector('h4').textContent = `Item ${index + 1}: ${nome.split(' ')[0]}...`; // Atualiza o título resumido
+            itemDiv.querySelector('h4').textContent = `Item ${index + 1}: ${nome}`; // Atualiza o título completo
         }
         
         function removerItem(index) {
@@ -859,6 +891,16 @@
                 itemParaRemover.remove();
             }
             
+            // Reindexa os IDs dos itens restantes
+            container.querySelectorAll('.item-form').forEach((itemForm, newIndex) => {
+                 itemForm.id = `item-form-${newIndex}`;
+                 // Atualizar o título do h4 e o onclick do botão de remover
+                 itemForm.querySelector('h4').textContent = `Item ${newIndex + 1}: ${itemForm.querySelector('.item-nome-material').value}`;
+                 itemForm.querySelector('button[onclick]').setAttribute('onclick', `removerItem(${newIndex})`);
+                 itemForm.querySelector('.item-codigo').setAttribute('onchange', `atualizarNomeMaterial(this, ${newIndex})`);
+            });
+
+
             // Se ficar vazio, adiciona a mensagem
             if (container.querySelectorAll('.item-form').length === 0) {
                  container.innerHTML = '<p>Nenhum item nesta vaga.</p>';
@@ -1047,6 +1089,8 @@
                 <hr style="margin: 20px 0;">
                 
                 <h4>Itens na Vaga</h4>
+                <p style="font-size: 0.9em;">Se a vaga for para múltiplos produtos (Ex: Acessórios), preencha um item por código. A Vaga aparecerá na listagem com o *primeiro* item.</p>
+
                 <div id="campo-itens-container">
                     </div>
                 
