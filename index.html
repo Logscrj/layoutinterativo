@@ -45,7 +45,7 @@
         }
         .tab-button.active {
             background-color: #fff;
-            border-bottom: 3px solid #4CAF50; /* Mudança de cor para foco no inventário */
+            border-bottom: 3px solid #4CAF50;
             color: #4CAF50;
         }
         .tab-content {
@@ -133,6 +133,9 @@
             <h2>Registrar Nova Contagem de Estoque</h2>
             <form id="form-contagem" onsubmit="adicionarContagem(event)">
 
+                <label for="campo-local-contagem">Local/Área Contada:</label>
+                <input type="text" id="campo-local-contagem" placeholder="Ex: Rua 3, Pátio A" required>
+                
                 <label for="campo-codigo-contagem">Código do Material (QR Code ou Digitar):</label>
                 <input type="text" id="campo-codigo-contagem" oninput="atualizarNomeMaterialContagem(this.value)" required>
                 
@@ -159,6 +162,7 @@
             <table id="tabela-contagens">
                 <thead>
                     <tr>
+                        <th>Local</th>
                         <th>Cód.</th>
                         <th>Nome Material</th>
                         <th>Data</th>
@@ -173,7 +177,7 @@
 
         <div id="tab-layout-contagem" class="tab-content">
             <h2>Resumo das Contagens por Data</h2>
-            <p>Selecione uma data para visualizar o inventário consolidado.</p>
+            <p>Selecione uma data para visualizar o inventário consolidado por local e material.</p>
             
             <label for="filtro-data-layout">Visualizar Contagens da Data:</label>
             <input type="date" id="filtro-data-layout" onchange="renderizarResumoPorData(this.value)">
@@ -202,31 +206,20 @@
             "304393": "CH V PROMAPRO+ RF BR15,0-120X240",
             "4066968": "FIX IB GYP TA 3,5X45 CX 500",
             "93022": "CH V GYP ST BR12,5-120X240",
-            // Adicione mais itens conforme seu arquivo
         };
         
         function showTab(tabId, button) {
-            // Oculta todas as abas
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            // Desativa todos os botões
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
 
-            // Mostra a aba desejada
             document.getElementById(tabId).classList.add('active');
-            // Ativa o botão
             button.classList.add('active');
             
-            // Renderiza o conteúdo da aba de resumo quando ela é aberta
             if (tabId === 'tab-layout-contagem') {
                 const dataSelecionada = document.getElementById('filtro-data-layout').value;
                 renderizarResumoPorData(dataSelecionada);
             }
             
-            // Garante que o scanner pare se a aba for trocada
             if (isScanning && tabId !== 'tab-registrar') {
                 pararScanner();
             }
@@ -235,7 +228,6 @@
         // --- FUNÇÕES GERAIS ---
 
         function extrairCodigoMaterial(codigoBruto) {
-            // Regex para extrair a parte numérica após 'Q00060'
             const match = codigoBruto.match(/Q00060(\d+)/);
             if (match && match[1]) {
                 return match[1];
@@ -275,19 +267,21 @@
             
             if (isScanning) pararScanner();
 
+            const localContagem = document.getElementById('campo-local-contagem').value; // NOVO CAMPO
             const codigoBruto = document.getElementById('campo-codigo-contagem').value;
             const codigoMaterial = extrairCodigoMaterial(codigoBruto);
             const nomeMaterial = document.getElementById('campo-nome-contagem').value;
             const dataContagem = document.getElementById('campo-data-contagem').value;
             const quantidade = parseFloat(document.getElementById('campo-quantidade-contagem').value);
 
-            if (nomeMaterial.includes("NÃO ENCONTRADO") || codigoBruto.length === 0) {
-                alert("Erro: O material não foi encontrado ou o campo Código do Material está vazio. Registre apenas materiais válidos.");
+            if (nomeMaterial.includes("NÃO ENCONTRADO") || codigoBruto.length === 0 || localContagem.length === 0) {
+                alert("Erro: Preencha todos os campos, incluindo Local, ou verifique o Código do Material.");
                 return;
             }
 
             const novaContagem = {
                 id: Date.now(),
+                local: localContagem, // NOVO CAMPO SALVO
                 codigo: codigoMaterial,
                 nome: nomeMaterial,
                 data: dataContagem,
@@ -312,8 +306,9 @@
             
             document.getElementById('total-contagens').textContent = contagens.length;
 
-            contagens.slice(0, 15).forEach(c => { // Mostra os 15 mais recentes
+            contagens.slice(0, 15).forEach(c => {
                 const row = tabelaBody.insertRow();
+                row.insertCell().textContent = c.local; // NOVO CAMPO EXIBIDO
                 row.insertCell().textContent = c.codigo;
                 row.insertCell().textContent = c.nome.substring(0, 30) + (c.nome.length > 30 ? '...' : ''); 
                 row.insertCell().textContent = c.data;
@@ -342,22 +337,24 @@
                 return;
             }
 
-            // 1. Agrupa as contagens por código de material
-            const resumoContagem = contagensDoDia.reduce((acc, contagem) => {
-                acc[contagem.codigo] = (acc[contagem.codigo] || 0) + contagem.quantidade;
+            // Agrupa as contagens por Local E Código do Material
+            const resumoConsolidado = contagensDoDia.reduce((acc, contagem) => {
+                const chave = `${contagem.local}|${contagem.codigo}`;
+                acc[chave] = (acc[chave] || 0) + contagem.quantidade;
                 return acc;
             }, {});
 
-            // 2. Cria a tabela de resumo
-            let html = `<h4>Inventário Consolidado para ${data} (${contagensDoDia.length} registros no total)</h4>`;
+            let html = `<h4>Inventário Consolidado para ${data}</h4>`;
             html += '<table id="tabela-resumo-consolidado">';
-            html += '<thead><tr><th>Cód. Material</th><th>Nome do Material</th><th>Quantidade Total Contada</th></tr></thead><tbody>';
+            html += '<thead><tr><th>Local/Área</th><th>Cód. Material</th><th>Nome do Material</th><th>Quantidade Contada</th></tr></thead><tbody>';
 
-            for (const codigo in resumoContagem) {
+            for (const chave in resumoConsolidado) {
+                const [local, codigo] = chave.split('|');
                 const nome = BASE_ITENS[codigo] || "Material Desconhecido";
-                const quantidadeTotal = resumoContagem[codigo];
+                const quantidadeTotal = resumoConsolidado[chave];
                 
                 html += `<tr>
+                            <td>${local}</td>
                             <td>${codigo}</td>
                             <td>${nome}</td>
                             <td>${quantidadeTotal}</td>
@@ -365,25 +362,28 @@
             }
             
             html += '</tbody></table>';
-            html += '<p style="margin-top: 15px;">Este resumo soma todas as contagens do mesmo material feitas no dia selecionado.</p>';
+            html += '<p style="margin-top: 15px;">Este resumo agrupa as contagens do mesmo material feitas na mesma área no dia selecionado.</p>';
 
             displayDiv.innerHTML = html;
         }
 
 
-        // --- LÓGICA DO SCANNER QR CODE ---
+        // --- LÓGICA DO SCANNER QR CODE (Revisada) ---
         
         const html5QrCode = new Html5Qrcode("leitor-qr-code");
         let isScanning = false;
         const btnScanner = document.getElementById('btn-scanner');
 
         function iniciarScanner() {
+            // Adiciona um alerta para confirmar que a função foi chamada
+            alert("Tentando iniciar a câmera. O navegador pedirá permissão.");
+
             const scannerDiv = document.getElementById('leitor-qr-code');
             const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
             if (!isScanning) {
                 html5QrCode.start(
-                    { facingMode: "environment" }, 
+                    { facingMode: "environment" }, // Prioriza a câmera traseira em dispositivos móveis
                     config,
                     (decodedText, decodedResult) => {
                         const inputCampo = document.getElementById('campo-codigo-contagem');
@@ -394,10 +394,11 @@
                         document.getElementById('campo-quantidade-contagem').focus();
                     },
                     (errorMessage) => {
-                        // Erro de decodificação
+                        // Erro de decodificação (normal)
                     }
                 ).catch((err) => {
-                    alert("Erro ao iniciar a câmera. Verifique as permissões do navegador e se o dispositivo tem câmera. " + err);
+                    // Este erro é crucial para o diagnóstico:
+                    alert("ERRO FATAL CÂMERA: Verifique se a página é HTTPS, se a permissão foi negada ou se a câmera já está em uso por outro aplicativo/aba. Detalhe: " + err);
                     isScanning = false;
                     btnScanner.textContent = "Abrir Câmera (QR Code) 📷";
                 });
@@ -428,14 +429,11 @@
         // --- INICIALIZAÇÃO DA PÁGINA ---
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Define a data atual nos campos
             const dataAtual = new Date().toISOString().slice(0, 10);
             document.getElementById('campo-data-contagem').value = dataAtual;
             document.getElementById('filtro-data-layout').value = dataAtual;
 
-            // Carrega as contagens salvas
             renderizarContagens();
-            // A aba 2 será renderizada quando for acessada.
         });
     </script>
 </body>
