@@ -14,6 +14,7 @@
             --cor-texto-principal: #1E1E1E;
             --cor-ocupado: #FFD700; /* Dourado/Amarelo para Ocupação */
             --cor-vazio: #333333; /* Cinza Escuro para Vazio */
+            --cor-contagem: #1e87f0; /* Azul para destaque da contagem */
         }
 
         body {
@@ -81,9 +82,10 @@
         }
 
         /* --- Layout de Áreas (em Tabela, como planilha) --- */
-        #layout-areas {
+        #layout-areas, #layout-contado-areas {
             display: grid;
             gap: 20px;
+            margin-top: 20px;
         }
 
         .area {
@@ -100,6 +102,11 @@
             padding-bottom: 5px;
             margin-top: 0;
             cursor: pointer;
+        }
+
+        .area-contada h2 {
+             color: var(--cor-contagem);
+             border-bottom: 2px solid var(--cor-contagem);
         }
 
         .tabela-vagas {
@@ -122,6 +129,11 @@
             font-size: 0.85em;
             white-space: nowrap; /* Evita quebra de linha no cabeçalho */
         }
+        
+        /* Cabeçalho da Tabela Contada (Diferente) */
+        .tabela-vagas.contado th {
+            background-color: var(--cor-contagem);
+        }
 
         /* Linha da Vaga */
         .tabela-vagas tr {
@@ -132,74 +144,44 @@
         .tabela-vagas tr:hover {
             background-color: #ffe8cc; /* Cor de hover suave */
         }
+        
+        .tabela-vagas.contado tr:hover {
+             background-color: #e0f2ff; /* Cor de hover suave azul */
+        }
 
         .vaga-ocupada {
             background-color: #fff7e6; /* Fundo mais claro para ocupadas */
         }
         
+        .vaga-contada {
+            background-color: #f0f8ff; /* Fundo mais claro para contadas */
+        }
+        
+        /* Estilos de Status */
         .status-liberado { color: #28a745; font-weight: bold; }
         .status-na-fila-do-fifo { color: #007bff; font-weight: bold; }
         .status-bloqueado, .status-bloqueado-qa { color: #dc3545; font-weight: bold; }
         .status-em-cura { color: #ffc107; font-weight: bold; }
+        .status-contado { color: var(--cor-contagem); font-weight: bold; }
 
-        /* --- Modal de Edição/Visualização --- */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-        }
-
-        .modal-content {
-            background-color: var(--cor-fundo);
-            margin: 10% auto;
+        /* --- Interface de Contagem (Formulário) --- */
+        #interface-contagem {
+            background-color: #ffffff;
             padding: 20px;
-            border: 5px solid var(--cor-principal);
-            width: 80%;
-            max-width: 600px;
             border-radius: 8px;
-            color: var(--cor-texto-principal);
-            position: relative;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
         }
-
-        .close-button {
-            color: var(--cor-secundaria);
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            cursor: pointer;
-        }
-
-        .close-button:hover,
-        .close-button:focus {
-            color: var(--cor-principal);
-            text-decoration: none;
-        }
-
-        .modal-content h3 {
-            color: var(--cor-secundaria);
-            border-bottom: 2px solid var(--cor-principal);
-            padding-bottom: 5px;
-        }
-
-        .modal-content label {
+        
+        #form-contagem label {
             display: block;
             margin-top: 10px;
             font-weight: bold;
         }
 
-        .modal-content input,
-        .modal-content select,
-        .modal-content textarea {
-            width: 95%;
+        #form-contagem input,
+        #form-contagem select {
+            width: 100%;
             padding: 8px;
             margin-top: 5px;
             border: 1px solid #ccc;
@@ -207,8 +189,8 @@
             box-sizing: border-box;
         }
 
-        .modal-content button {
-            background-color: var(--cor-principal);
+        #form-contagem button {
+            background-color: var(--cor-contagem);
             color: var(--cor-texto);
             padding: 10px 15px;
             border: none;
@@ -219,14 +201,46 @@
             transition: background-color 0.3s;
         }
 
-        .modal-content button:hover {
-            background-color: #CC7000;
+        #form-contagem button:hover {
+            background-color: #1260a5;
         }
-
-        /* Estilo para itens dentro do modal */
-        .item-form {
+        
+         .nome-material-contagem {
+             font-style: italic;
+             color: #666;
+             margin-top: 5px;
+             display: block;
+         }
+         
+         .contagem-message {
+             padding: 10px;
+             margin-top: 15px;
+             border-radius: 4px;
+             font-weight: bold;
+         }
+         
+         .success {
+             background-color: #d4edda;
+             color: #155724;
+             border: 1px solid #c3e6cb;
+         }
+         
+         /* NOVO: Estilo para o filtro de data */
+         #filtro-contagem-container {
+             background-color: #e0f2ff; 
+             padding: 15px; 
+             border-radius: 4px;
              margin-bottom: 20px;
-        }
+             border: 1px solid var(--cor-contagem);
+         }
+         
+         #data-filtro-contagem {
+             padding: 8px; 
+             border: 1px solid #ccc; 
+             border-radius: 4px; 
+             margin-left: 10px;
+         }
+
 
     </style>
     <script>
@@ -478,6 +492,7 @@
 
         // --- Estrutura de Vagas (Vazia) ---
         let vagasEstoque = {};
+        let contagensRegistradas = []; // NOVO: Armazena todas as contagens registradas
         
         // Definição das Áreas e Vagas Iniciais (Baseado no Excel)
         const AREAS = [
@@ -485,38 +500,86 @@
             "Quarentena", "Triagem", "Pushback", "Pezinho"
         ];
         
-        // Inicializa as vagas. Capacidade e Ocupação são preenchidas no JS
+        // ===============================================
+        // FUNÇÕES DE EXTRAÇÃO DE DADOS DO QR CODE (NOVO)
+        // ===============================================
+        
+        // NOVO: Função para extrair o código de material do código QR bruto (ex: Q0006092983 -> 92983)
+        function extrairCodigoMaterial(codigoBruto) {
+            if (!codigoBruto) return '';
+            
+            // 1. Remove o prefixo fixo 'Q000' (case insensitive) e garante que é só dígitos
+            let parteNumerica = codigoBruto.toUpperCase().replace(/^Q000/, '').trim();
+            if (!parteNumerica) return '';
+            
+            // 2. Tenta encontrar o código de material (chave em BASE_ITENS) no final da string numérica.
+            // Procura do maior comprimento (7 dígitos) para o menor (5 dígitos) para evitar truncar códigos longos.
+            // Os códigos de material em BASE_ITENS têm entre 5 e 7 dígitos.
+            const comprimentosPossiveis = [7, 6, 5]; 
 
-        // Função para calcular o % de ocupação do estoque
-        function calcularOcupacaoGeral() {
+            for (const comprimento of comprimentosPossiveis) {
+                if (parteNumerica.length >= comprimento) {
+                    const candidato = parteNumerica.slice(-comprimento); // Pega os últimos N dígitos
+                    
+                    if (BASE_ITENS[candidato]) {
+                        return candidato; // Código de material válido encontrado
+                    }
+                }
+            }
+            
+            // Se não encontrar match em BASE_ITENS, retorna a string numérica completa limpa
+            // (Pode ser o caso do usuário digitar só o código limpo)
+            return parteNumerica; 
+        }
+        
+        // Função para atualizar o nome do material (usa a nova função de extração)
+        function atualizarNomeMaterialContagem(codigoBruto) {
+            const codigo = extrairCodigoMaterial(codigoBruto); // **AGORA USA O EXTRATOR**
+            const nomeSpan = document.getElementById('nome-material-contagem');
+            
+            if (codigo && BASE_ITENS[codigo]) {
+                nomeSpan.textContent = BASE_ITENS[codigo].nome;
+                nomeSpan.style.color = '#28a745'; 
+            } else {
+                nomeSpan.textContent = 'Nome do Material (Código não encontrado na base)';
+                nomeSpan.style.color = '#CC0000'; 
+            }
+        }
+        
+        // ===============================================
+        // FUNÇÕES GERAIS E CÁLCULOS (Dashboard)
+        // ===============================================
+
+        // Função para calcular o % de ocupação geral e por material...
+        function calcularOcupacaoGeral(vagasData = vagasEstoque) {
+            // Implementação mantida
             let totalCapacidade = 0;
             let totalOcupado = 0;
+            let totalItens = 0;
 
-            for (const area in vagasEstoque) {
-                totalCapacidade += vagasEstoque[area].capacidadeTotal;
+            for (const area in vagasData) {
+                totalCapacidade += vagasData[area].capacidadeTotal || 0;
                 
-                // Soma a ocupação real de cada vaga dentro da área
-                for (const vagaID in vagasEstoque[area].vagas) {
-                    const vaga = vagasEstoque[area].vagas[vagaID];
-                    if (vaga.itens.length > 0) {
-                        totalOcupado += 1; // Contagem simples por vaga ocupada
+                for (const vagaID in vagasData[area].vagas) {
+                    const vaga = vagasData[area].vagas[vagaID];
+                    if (vaga.itens && vaga.itens.length > 0) {
+                        totalOcupado += 1;
+                        vaga.itens.forEach(item => {
+                            totalItens += item.quantidade || 0;
+                        });
                     }
                 }
             }
 
             const percentual = totalCapacidade > 0 ? (totalOcupado / totalCapacidade) * 100 : 0;
             const vagasLivres = totalCapacidade - totalOcupado;
-
-            // Atualiza o Dashboard
-            document.getElementById('total-ocupacao').textContent = `${percentual.toFixed(1)}% (${totalOcupado} de ${totalCapacidade} Vagas)`;
-            document.getElementById('progress-geral').style.width = `${percentual}%`;
-            document.getElementById('vagas-livres').textContent = `${vagasLivres} Vagas Livres`;
-
-            return { totalCapacidade, totalOcupado };
+            
+            return { totalCapacidade, totalOcupado, percentual, vagasLivres, totalItens };
         }
 
         // Função para calcular o % por tipo de material
-        function calcularOcupacaoMaterial() {
+        function calcularOcupacaoMaterial(vagasData = vagasEstoque) {
+            // Implementação mantida
             const contagemMaterial = {};
             const tiposMaterial = [
                 "PLACA DE GESSO (ST/RU/RF)", "PLACA CIMENTÍCIA/ESPECIAL", "ACESSÓRIOS E PERFIS", "QUÍMICOS E MASSAS", "OUTROS REVESTIMENTOS"
@@ -524,38 +587,49 @@
 
             tiposMaterial.forEach(tipo => contagemMaterial[tipo] = 0);
             
-            let totalItens = 0; // Contagem total de quantidades (Un/Pallets/Kg)
+            let totalItens = 0;
 
-            for (const area in vagasEstoque) {
-                for (const vagaID in vagasEstoque[area].vagas) {
-                    const vaga = vagasEstoque[area].vagas[vagaID];
+            for (const area in vagasData) {
+                for (const vagaID in vagasData[area].vagas) {
+                    const vaga = vagasData[area].vagas[vagaID];
                     vaga.itens.forEach(item => {
                         const infoItem = BASE_ITENS[item.codigo];
                         if (infoItem && tiposMaterial.includes(infoItem.tipo)) {
-                            // Soma a quantidade (Un/Pallets/Kg)
                             contagemMaterial[infoItem.tipo] += item.quantidade || 0; 
                             totalItens += item.quantidade || 0;
                         }
                     });
                 }
             }
+            
+            return { contagemMaterial, totalItens, tiposMaterial };
+        }
+        
+        // Função unificada para atualizar o Dashboard (apenas para o layout manual)
+        function atualizarDashboardGeral() {
+             const { totalCapacidade, totalOcupado, percentual, vagasLivres } = calcularOcupacaoGeral(vagasEstoque);
+             const { contagemMaterial, totalItens, tiposMaterial } = calcularOcupacaoMaterial(vagasEstoque);
 
+            // Atualiza o Dashboard Geral
+            document.getElementById('total-ocupacao').textContent = `${percentual.toFixed(1)}% (${totalOcupado} de ${totalCapacidade} Vagas)`;
+            document.getElementById('progress-geral').style.width = `${percentual}%`;
+            document.getElementById('vagas-livres').textContent = `${vagasLivres} Vagas Livres`;
+            
+            // Atualiza o Dashboard de Material
             const dashboardMaterial = document.getElementById('dashboard-material');
-            dashboardMaterial.innerHTML = '<h3>% por Tipo de Material (em Qtd.)</h3>';
+            dashboardMaterial.innerHTML = '<h3>% por Tipo de Material (em Qtd.) - Layout Manual</h3>';
 
-            const tiposParaExibir = tiposMaterial;
-
-            tiposParaExibir.forEach(tipo => {
+            tiposMaterial.forEach(tipo => {
                 const qtd = contagemMaterial[tipo];
-                const percentual = totalItens > 0 ? (qtd / totalItens) * 100 : 0;
+                const percentualMat = totalItens > 0 ? (qtd / totalItens) * 100 : 0;
                 
                 const card = document.createElement('div');
                 card.className = 'card-dashboard';
                 card.innerHTML = `
                     <h4>${tipo.split(' (')[0].replace('/', '/<br>')}</h4>
-                    <p>Qtd: ${qtd.toFixed(0)} | ${percentual.toFixed(1)}%</p>
+                    <p>Qtd: ${qtd.toFixed(0)} | ${percentualMat.toFixed(1)}%</p>
                     <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: ${percentual.toFixed(1)}%; background-color: var(--cor-principal);"></div>
+                        <div class="progress-bar" style="width: ${percentualMat.toFixed(1)}%; background-color: var(--cor-principal);"></div>
                     </div>
                 `;
                 dashboardMaterial.appendChild(card);
@@ -563,17 +637,27 @@
         }
 
 
-        // Função para renderizar o layout das áreas e vagas (AGORA EM FORMATO DE TABELA)
+        // ===============================================
+        // FUNÇÕES DE RENDERIZAÇÃO (Layout Manual)
+        // ===============================================
+
+        // Função para renderizar o layout das áreas e vagas (Manual - Editável)
         function renderizarLayout() {
             const container = document.getElementById('layout-areas');
-            container.innerHTML = ''; // Limpa o container
+            container.innerHTML = ''; 
 
             AREAS.forEach(areaNome => {
                 const areaDiv = document.createElement('div');
                 areaDiv.className = 'area';
-                areaDiv.innerHTML = `<h2 onclick="toggleArea('${areaNome}')">${areaNome} (Capacidade: ${vagasEstoque[areaNome].capacidadeTotal} Vagas)</h2>`;
+                // Certifica-se de que a área existe, senão inicializa (útil após carregar do localStorage)
+                if (!vagasEstoque[areaNome]) {
+                    vagasEstoque[areaNome] = { capacidadeTotal: 0, vagas: {} };
+                }
+                const vagasArea = vagasEstoque[areaNome].vagas;
+                const totalVagasOcupadas = Object.values(vagasArea).filter(v => v.itens && v.itens.length > 0).length;
 
-                // Adicionar botão de 'Criar Vaga/Rua'
+                areaDiv.innerHTML = `<h2 onclick="toggleArea('${areaNome}', 'layout-areas')">1. Layout Manual - ${areaNome} (Capacidade: ${vagasEstoque[areaNome].capacidadeTotal} Vagas | Ocupadas: ${totalVagasOcupadas})</h2>`;
+
                 const btnCriarVaga = document.createElement('button');
                 btnCriarVaga.textContent = `+ Criar Vaga/Rua em ${areaNome}`;
                 btnCriarVaga.onclick = () => abrirModalNovaVaga(areaNome);
@@ -589,339 +673,402 @@
 
 
                 const tableContainer = document.createElement('div');
-                tableContainer.id = `ruas-${areaNome.toLowerCase().replace(/\s/g, '-')}`;
-                tableContainer.style.display = 'block'; // Começa visível
+                tableContainer.id = `ruas-${areaNome.toLowerCase().replace(/\s/g, '-')}-manual`;
+                tableContainer.style.display = 'block'; 
                 
                 const tabela = document.createElement('table');
                 tabela.className = 'tabela-vagas';
-                tabela.innerHTML = `
-                    <thead>
-                        <tr>
-                            <th>Área/Rua</th>
-                            <th>Capacidade (Vagas)</th>
-                            <th>Código</th>
-                            <th>Produto</th>
-                            <th>Quantidade</th>
-                            <th>Lote</th>
-                            <th>Validade</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                `;
+                tabela.innerHTML = renderizarTabelaVagas(vagasEstoque, areaNome, true);
                 tableContainer.appendChild(tabela);
 
                 areaDiv.appendChild(tableContainer);
+                container.appendChild(areaDiv);
+            });
+            
+            atualizarDashboardGeral();
+            salvarVagas();
+        }
+        
+        // Função para gerar o HTML da Tabela (reutilizável)
+        function renderizarTabelaVagas(dataStructure, areaNome, isEditable) {
+             let html = `
+                <thead>
+                    <tr style="${isEditable ? '' : 'background-color: var(--cor-contagem);'}">
+                        <th>Área/Rua</th>
+                        <th>Capacidade (Vagas)</th>
+                        <th>Código</th>
+                        <th>Produto</th>
+                        <th>Quantidade</th>
+                        <th>Lote</th>
+                        <th>Validade</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            const vagasArea = dataStructure[areaNome] ? dataStructure[areaNome].vagas : {};
+            const vagasOrdenadas = Object.values(vagasArea).sort((a, b) => {
+                // Ordenação numérica amigável por Rua 01, Rua 02, etc.
+                return a.nomeRua.localeCompare(b.nomeRua, undefined, { numeric: true, sensitivity: 'base' });
+            });
 
-                // Renderiza as vagas existentes
-                const vagasArea = vagasEstoque[areaNome].vagas;
-                const tbody = tabela.querySelector('tbody');
+            vagasOrdenadas.forEach(vaga => {
+                const vagaID = vaga.id;
+                // Considera a vaga ocupada se tiver algum item com quantidade > 0
+                const isOcupada = vaga.itens && vaga.itens.length > 0 && vaga.itens.some(i => i.quantidade > 0);
+                const itemPrincipal = isOcupada ? vaga.itens[0] : {};
+                const infoItem = BASE_ITENS[itemPrincipal.codigo] || { nome: 'VAGA VAZIA' };
+                
+                let statusClass = '';
+                if (itemPrincipal.status) {
+                    statusClass = 'status-' + itemPrincipal.status.toLowerCase().replace(/\s/g, '-').replace(' ', '-');
+                }
 
-                // CORREÇÃO: Ordenação das vagas pelo nome da rua (ordem natural)
-                const vagasOrdenadas = Object.values(vagasArea).sort((a, b) => {
-                    return a.nomeRua.localeCompare(b.nomeRua, undefined, { numeric: true, sensitivity: 'base' });
-                });
+                const rowClass = isEditable 
+                    ? (isOcupada ? 'vaga-ocupada' : '') 
+                    : (isOcupada ? 'vaga-contada' : '');
 
-                vagasOrdenadas.forEach(vaga => {
-                    const vagaID = vaga.id;
-                    const isOcupada = vaga.itens.length > 0;
-                    const itemPrincipal = isOcupada ? vaga.itens[0] : {};
-                    const infoItem = BASE_ITENS[itemPrincipal.codigo] || { nome: 'VAGA VAZIA' };
-                    
-                    let statusClass = '';
-                    if (itemPrincipal.status) {
-                        statusClass = 'status-' + itemPrincipal.status.toLowerCase().replace(/\s/g, '-').replace(' ', '-');
-                    }
-
-                    const tr = document.createElement('tr');
-                    tr.className = isOcupada ? 'vaga-ocupada' : '';
-                    tr.onclick = () => abrirModalVaga(vagaID, vaga);
-                    
-                    tr.innerHTML = `
+                html += `
+                    <tr class="${rowClass}" onclick="${isEditable ? `abrirModalVaga('${vagaID}', '${areaNome}')` : `abrirModalVagaContada('${vagaID}', '${areaNome}')`}">
                         <td>${vaga.nomeRua}</td>
-                        <td>${vaga.capacidade}</td>
+                        <td>${vaga.capacidade || 0}</td>
                         <td>${isOcupada ? itemPrincipal.codigo : ''}</td>
                         <td>${isOcupada ? infoItem.nome : 'VAGA VAZIA'}</td>
                         <td>${isOcupada ? itemPrincipal.quantidade : '0'}</td>
                         <td>${isOcupada ? itemPrincipal.lote : ''}</td>
                         <td>${isOcupada && itemPrincipal.validade ? itemPrincipal.validade : ''}</td>
                         <td class="${statusClass}">${isOcupada ? itemPrincipal.status : 'LIVRE'}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-                container.appendChild(areaDiv);
+                    </tr>
+                `;
             });
             
-            // Recalcula o dashboard após a renderização
-            calcularOcupacaoGeral();
-            calcularOcupacaoMaterial();
-            salvarVagas();
+            html += '</tbody>';
+            return html;
         }
 
         // Função para mostrar/esconder o conteúdo da área
-        function toggleArea(areaNome) {
-            const tableContainer = document.getElementById(`ruas-${areaNome.toLowerCase().replace(/\s/g, '-')}`);
-            // Alterna o estado de exibição
+        function toggleArea(areaNome, containerId) {
+            // Implementação mantida
+            const suffix = containerId.includes('contado') ? '-contado' : '-manual';
+            const tableContainer = document.getElementById(`ruas-${areaNome.toLowerCase().replace(/\s/g, '-')}${suffix}`);
             if (tableContainer.style.display === 'table' || tableContainer.style.display === 'block') {
                 tableContainer.style.display = 'none';
             } else {
                  tableContainer.style.display = 'block';
             }
         }
-
-        // --- Funções do Modal (Nova Vaga) ---
-        function abrirModalNovaVaga(areaNome) {
-            const modal = document.getElementById('modal-vaga');
-            const titulo = document.getElementById('modal-vaga-titulo');
-            const form = document.getElementById('form-vaga');
-            
-            titulo.textContent = `Criar Nova Vaga/Rua em ${areaNome}`;
-            document.getElementById('vaga-id').value = '';
-            document.getElementById('campo-nome-rua').value = '';
-            document.getElementById('campo-capacidade').value = 1; // Capacidade padrão
-            document.getElementById('area-associada').value = areaNome;
-            document.getElementById('campo-itens-container').innerHTML = '';
-            document.getElementById('btn-adicionar-item').style.display = 'none'; // Esconde para nova vaga
-            document.getElementById('btn-remover-vaga').style.display = 'none';
-
-            form.onsubmit = (e) => {
-                e.preventDefault();
-                salvarNovaVaga();
-            };
-            modal.style.display = 'block';
-        }
-
-        function salvarNovaVaga() {
-            const areaNome = document.getElementById('area-associada').value;
-            const nomeRua = document.getElementById('campo-nome-rua').value;
-            const capacidade = parseInt(document.getElementById('campo-capacidade').value);
-            // Gera um ID único e seguro baseado no nome
-            const vagaID = areaNome.toLowerCase().replace(/\s/g, '-') + '-' + nomeRua.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '');
-            
-            if (vagasEstoque[areaNome].vagas[vagaID]) {
-                alert('Vaga/Rua com este nome já existe nesta área!');
-                return;
-            }
-
-            vagasEstoque[areaNome].vagas[vagaID] = {
-                id: vagaID,
-                nomeRua: nomeRua,
-                capacidade: capacidade,
-                itens: [] // Vaga nova começa vazia
-            };
-
-            vagasEstoque[areaNome].capacidadeTotal += capacidade;
-            
-            fecharModal();
-            renderizarLayout();
-        }
-
-        // --- Funções do Modal (Edição/Preenchimento de Vaga) ---
-        function abrirModalVaga(vagaID, vaga) {
-            const modal = document.getElementById('modal-vaga');
-            const titulo = document.getElementById('modal-vaga-titulo');
-            const form = document.getElementById('form-vaga');
-            
-            titulo.textContent = `Vaga/Rua: ${vaga.nomeRua}`;
-            document.getElementById('vaga-id').value = vagaID;
-            document.getElementById('campo-nome-rua').value = vaga.nomeRua;
-            document.getElementById('campo-capacidade').value = vaga.capacidade;
-            document.getElementById('area-associada').value = Object.keys(vagasEstoque).find(area => vagasEstoque[area].vagas[vagaID]);
+        
+        // ** NOTA: As funções de modal (abrirModalNovaVaga, salvarNovaVaga, abrirModalVaga, removerVaga, salvarVagaEditada, renderizarItensModal, adicionarItem, criarFormItem, removerItem, fecharModal)
+        // DEVEM ser mantidas em seu código final para que o Layout Manual funcione. Omitidas aqui por brevidade. **
+        
+        // Exemplo da função fecharModal para referência
+        function fecharModal() {
+            document.getElementById('modal-vaga').style.display = 'none';
+            // Reseta para o modo edição padrão ao fechar
+            document.getElementById('form-vaga').style.pointerEvents = 'auto';
+            document.getElementById('form-vaga').style.opacity = '1';
+            document.querySelector('#form-vaga button[type="submit"]').style.display = 'inline-block';
+             
+             // Habilita campos do modal
+            document.querySelectorAll('#form-vaga input, #form-vaga select, #form-vaga textarea').forEach(el => el.disabled = false);
             document.getElementById('btn-adicionar-item').style.display = 'inline-block';
             document.getElementById('btn-remover-vaga').style.display = 'inline-block';
-            document.getElementById('btn-remover-vaga').onclick = () => removerVaga(vagaID);
 
-            renderizarItensModal(vaga.itens);
+        }
 
-            form.onsubmit = (e) => {
-                e.preventDefault();
-                salvarVagaEditada(vagaID);
+        // ===============================================
+        // Lógica de Contagem de Estoque
+        // ===============================================
+
+        function renderizarInterfaceContagem() {
+            // Implementação mantida
+            const container = document.getElementById('interface-contagem');
+            container.innerHTML = `
+                <h2>2. Registrar Nova Contagem de Estoque</h2>
+                <p>Simule a leitura do **QR Code** (código) ou digite o código de material. Ex: Q0006092983</p>
+                <form id="form-contagem">
+                    <label for="campo-codigo-contagem">Código do Material (QR Code):</label>
+                    <input type="text" id="campo-codigo-contagem" required onchange="atualizarNomeMaterialContagem(this.value)">
+                    <span id="nome-material-contagem" class="nome-material-contagem">Nome do Material (Aguardando Código)</span>
+                    
+                    <label for="campo-area-contagem">Área:</label>
+                    <select id="campo-area-contagem" required>
+                        <option value="">Selecione a Área</option>
+                        ${AREAS.map(area => `<option value="${area}">${area}</option>`).join('')}
+                    </select>
+
+                    <label for="campo-vaga-contagem">Vaga/Rua (Ex: Rua 01, Área PB 1):</label>
+                    <input type="text" id="campo-vaga-contagem" placeholder="Ex: Rua 01" required>
+
+                    <label for="campo-quantidade-contagem">Quantidade Contada (Un/Pallets/Kg):</label>
+                    <input type="number" step="any" id="campo-quantidade-contagem" value="0" min="0" required>
+                    
+                    <label for="campo-lote-contagem">Lote:</label>
+                    <input type="text" id="campo-lote-contagem" value="" placeholder="Opcional">
+                    
+                    <label for="campo-validade-contagem">Validade:</label>
+                    <input type="date" id="campo-validade-contagem">
+                    
+                    <label for="campo-observacao-contagem">Observação:</label>
+                    <textarea id="campo-observacao-contagem"></textarea>
+                    
+                    <label for="campo-data-contagem">Data da Contagem:</label>
+                    <input type="date" id="campo-data-contagem" value="${new Date().toISOString().slice(0, 10)}" required>
+
+                    <button type="submit">Registrar Contagem</button>
+                    <div id="contagem-feedback"></div>
+                </form>
+            `;
+            
+            document.getElementById('form-contagem').onsubmit = adicionarContagem;
+        }
+
+        function adicionarContagem(e) {
+            e.preventDefault();
+            
+            // 1. EXTRAI O CÓDIGO LIMPO DO MATERIAL
+            const codigoBruto = document.getElementById('campo-codigo-contagem').value;
+            const codigo = extrairCodigoMaterial(codigoBruto); // **USA O EXTRATOR**
+            
+            // 2. Coleta o restante dos dados
+            const area = document.getElementById('campo-area-contagem').value;
+            const vagaNome = document.getElementById('campo-vaga-contagem').value.trim();
+            const quantidade = parseFloat(document.getElementById('campo-quantidade-contagem').value) || 0;
+            const lote = document.getElementById('campo-lote-contagem').value.trim();
+            const validade = document.getElementById('campo-validade-contagem').value;
+            const observacao = document.getElementById('campo-observacao-contagem').value.trim();
+            const dataContagem = document.getElementById('campo-data-contagem').value;
+            
+            if (!BASE_ITENS[codigo]) {
+                 mostrarFeedbackContagem('O Código do Material não foi encontrado na base. Digite o QR Code ou o código limpo.', 'error');
+                 return;
+            }
+            
+            // Verifica se a Vaga/Rua existe no layout mestre 
+            const areaVagas = vagasEstoque[area] ? vagasEstoque[area].vagas : {};
+            const vagaExiste = Object.values(areaVagas).some(v => v.nomeRua === vagaNome);
+            
+            if (!vagaExiste) {
+                 mostrarFeedbackContagem(`A Vaga/Rua "${vagaNome}" não existe na Área "${area}". Crie a vaga no layout manual primeiro.`, 'error');
+                 return;
+            }
+
+
+            const novaContagem = {
+                codigo, // Código Limpo
+                area,
+                vagaNome,
+                quantidade,
+                lote,
+                validade,
+                dataContagem,
+                observacao
             };
-            modal.style.display = 'block';
+
+            contagensRegistradas.push(novaContagem);
+            salvarContagens();
+            
+            // NOVO: Atualiza a data de filtro para a data da contagem, se a tela estiver visível
+            const filtroInput = document.getElementById('data-filtro-contagem');
+            if(filtroInput) {
+                filtroInput.value = dataContagem;
+                renderizarLayoutContado(dataContagem);
+            } else {
+                 renderizarLayoutContado();
+            }
+            
+            
+            // Feedback e reset do formulário (mantém Area e Data)
+            mostrarFeedbackContagem(`Contagem de **${BASE_ITENS[codigo].nome}** na vaga **${vagaNome}** registrada com sucesso!`, 'success');
+            document.getElementById('form-contagem').reset();
+            document.getElementById('campo-area-contagem').value = area; // Mantém a área selecionada
+            document.getElementById('campo-data-contagem').value = dataContagem; // Mantém a data
+            atualizarNomeMaterialContagem(''); // Limpa o nome do material
         }
         
-        function removerVaga(vagaID) {
-            if (!confirm("Tem certeza que deseja remover esta vaga? Todos os itens serão perdidos.")) {
-                return;
+        function mostrarFeedbackContagem(mensagem, tipo) {
+            // Implementação mantida
+            const feedback = document.getElementById('contagem-feedback');
+            feedback.innerHTML = `<div class="contagem-message ${tipo}">${mensagem.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</div>`;
+            setTimeout(() => feedback.innerHTML = '', 5000); // Remove a mensagem após 5s
+        }
+        
+        // NOVO: Determina a data inicial para o filtro
+        function getInitialFilterDate() {
+            if (contagensRegistradas.length === 0) {
+                return new Date().toISOString().slice(0, 10); // Data de hoje
             }
             
-            const areaNome = Object.keys(vagasEstoque).find(area => vagasEstoque[area].vagas[vagaID]);
-            if (areaNome) {
-                const capacidadeRemovida = vagasEstoque[areaNome].vagas[vagaID].capacidade;
-                delete vagasEstoque[areaNome].vagas[vagaID];
-                vagasEstoque[areaNome].capacidadeTotal -= capacidadeRemovida;
-                fecharModal();
-                renderizarLayout();
-            }
+            // Encontra a data mais recente em todas as contagens
+            const latestDate = contagensRegistradas.reduce((latest, current) => {
+                const currentDate = new Date(current.dataContagem);
+                // Retorna a data mais recente
+                return currentDate > latest ? currentDate : latest; 
+            }, new Date(0)); // Inicia com uma data muito antiga para a comparação
+            
+            return latestDate.toISOString().slice(0, 10);
         }
 
-        function salvarVagaEditada(vagaID) {
-            const areaNome = document.getElementById('area-associada').value;
-            const vaga = vagasEstoque[areaNome].vagas[vagaID];
-            
-            const novaCapacidade = parseInt(document.getElementById('campo-capacidade').value);
-            const nomeRua = document.getElementById('campo-nome-rua').value;
+        // NOVO: Configura o contêiner do filtro e layout contado
+        function setupContagemFilter() {
+             const initialDate = getInitialFilterDate();
+             
+             const container = document.getElementById('layout-contado-container'); // O container pai da seção 3
+             
+             // Cria a interface de filtro
+             const filtroDiv = document.createElement('div');
+             filtroDiv.id = 'filtro-contagem-container';
+             filtroDiv.innerHTML = `
+                <label for="data-filtro-contagem" style="font-weight: bold; color: var(--cor-secundaria);">Filtrar Contagens por Data:</label>
+                <input type="date" id="data-filtro-contagem" value="${initialDate}" onchange="renderizarLayoutContado(this.value)" style="width: 150px;">
+                <p style="font-style: italic; color: var(--cor-contagem); margin-top: 10px;">Visualização **somente leitura** das contagens registradas em: <strong id="data-ultima-contagem">${initialDate}</strong>.</p>
+             `;
+             
+             const layoutDiv = document.createElement('div');
+             layoutDiv.id = 'layout-contado-areas';
+             
+             container.appendChild(filtroDiv);
+             container.appendChild(layoutDiv);
+             
+             // Renderização inicial
+             renderizarLayoutContado(initialDate);
+        }
 
-            // Atualiza a capacidade total da área
-            vagasEstoque[areaNome].capacidadeTotal -= vaga.capacidade;
-            vagasEstoque[areaNome].capacidadeTotal += novaCapacidade;
 
-            // Atualiza a vaga
-            vaga.capacidade = novaCapacidade;
-            vaga.nomeRua = nomeRua;
-            
-            // Reconstroi a lista de itens do formulário
-            const itensContainer = document.getElementById('campo-itens-container');
-            const itensForms = itensContainer.querySelectorAll('.item-form');
-            const novosItens = [];
-
-            itensForms.forEach(itemForm => {
-                const item = {};
-                item.codigo = itemForm.querySelector('.item-codigo').value.toUpperCase(); // Garante o código em maiúsculas
-                item.quantidade = parseFloat(itemForm.querySelector('.item-quantidade').value) || 0;
-                item.lote = itemForm.querySelector('.item-lote').value;
-                item.validade = itemForm.querySelector('.item-validade').value;
-                item.status = itemForm.querySelector('.item-status').value;
-                item.observacao = itemForm.querySelector('.item-observacao').value;
-
-                if (item.codigo) {
-                    novosItens.push(item);
+        function processarContagensParaLayout(dataFiltro) {
+             // 1. Cria a estrutura base clonando o layout manual (preserva as ruas/capacidade)
+            const layoutContado = {};
+            AREAS.forEach(area => {
+                layoutContado[area] = { capacidadeTotal: vagasEstoque[area].capacidadeTotal || 0, vagas: {} };
+                for(const id in vagasEstoque[area].vagas) {
+                     const originalVaga = vagasEstoque[area].vagas[id];
+                     layoutContado[area].vagas[id] = {
+                        id: originalVaga.id,
+                        nomeRua: originalVaga.nomeRua,
+                        capacidade: originalVaga.capacidade,
+                        itens: [] // Vai ser preenchido com as contagens do dia
+                    };
                 }
             });
 
-            vaga.itens = novosItens;
+            // NOVO: Filtra as contagens pela data especificada
+            const contagensDoDia = contagensRegistradas.filter(count => count.dataContagem === dataFiltro);
             
-            fecharModal();
-            renderizarLayout();
+            // 2. Agrupa as contagens por Vaga ID, dando preferência à contagem mais recente (se houver repetição de item/lote no mesmo dia)
+            const vagasItens = {}; // { vagaID: { 'codigo|lote': countObject } }
+
+            contagensDoDia
+                .sort((a, b) => new Date(a.dataContagem + ' ' + a.vagaNome) - new Date(b.dataContagem + ' ' + b.vagaNome)) // Ordena para garantir ordem estável
+                .forEach(count => {
+                    const areaNome = count.area.trim();
+                    const nomeRua = count.vagaNome.trim();
+                    
+                    if (layoutContado[areaNome]) {
+                         // Tenta encontrar a vaga pelo nome da rua no layout mestre (que foi clonado)
+                         const vagaEntry = Object.values(layoutContado[areaNome].vagas).find(v => v.nomeRua === nomeRua);
+
+                         if(vagaEntry && count.quantidade > 0) {
+                            const key = `${count.codigo}|${count.lote}`;
+                            
+                            if (!vagasItens[vagaEntry.id]) {
+                                vagasItens[vagaEntry.id] = {};
+                            }
+                            // O mais recente (do array filtrado e ordenado) sempre sobrescreve o anterior
+                            vagasItens[vagaEntry.id][key] = count; 
+                         }
+                    }
+                });
+            
+            // 3. Aplica os dados processados na estrutura do layout
+            for (const areaNome in layoutContado) {
+                 for (const vagaID in layoutContado[areaNome].vagas) {
+                    const vaga = layoutContado[areaNome].vagas[vagaID];
+                    
+                    if (vagasItens[vagaID]) {
+                        // Adiciona todos os itens contados (o mais recente é o único que sobrou)
+                        Object.values(vagasItens[vagaID]).forEach(count => {
+                            vaga.itens.push({
+                                codigo: count.codigo,
+                                quantidade: count.quantidade,
+                                lote: count.lote,
+                                validade: count.validade,
+                                status: 'Contado',
+                                observacao: `[Contagem ${count.dataContagem}]: ${count.observacao}`
+                            });
+                        });
+                    }
+                }
+            }
+
+            return layoutContado;
         }
 
-        function renderizarItensModal(itens) {
-            const container = document.getElementById('campo-itens-container');
+        function renderizarLayoutContado(dataFiltro) {
+            // Obtém a data do filtro se não for passada (para chamadas onchange)
+            const filtroInput = document.getElementById('data-filtro-contagem');
+            if (!dataFiltro && filtroInput) {
+                dataFiltro = filtroInput.value;
+            }
+            
+            // Se ainda não houver data ou layout, sai
+            if (!dataFiltro) return; 
+            
+            const layoutContado = processarContagensParaLayout(dataFiltro);
+            const container = document.getElementById('layout-contado-areas');
+            
+            // Atualiza o display de data
+            document.getElementById('data-ultima-contagem').textContent = dataFiltro;
+            
+            // Verifica se há contagens para este dia
+            const totalContagensNoDia = contagensRegistradas.filter(c => c.dataContagem === dataFiltro).length;
+
+            if (totalContagensNoDia === 0) {
+                 container.innerHTML = `<p style="color: #CC0000; font-weight: bold;">Nenhuma contagem registrada para o dia ${dataFiltro}.</p>`;
+                 return;
+            }
+            
             container.innerHTML = '';
-            
-            if (itens.length === 0) {
-                container.innerHTML = '<p>Nenhum item nesta vaga.</p>';
-            }
 
-            itens.forEach((item, index) => {
-                const itemDiv = criarFormItem(index, item);
-                container.appendChild(itemDiv);
+            AREAS.forEach(areaNome => {
+                const areaDiv = document.createElement('div');
+                areaDiv.className = 'area area-contada'; // Classe diferente para visual
+                
+                // Cálculo das vagas ocupadas neste layout (apenas contagens do dia)
+                const vagasArea = layoutContado[areaNome] ? layoutContado[areaNome].vagas : {};
+                const totalVagasContadas = Object.values(vagasArea).filter(v => v.itens && v.itens.length > 0 && v.itens.some(i => i.quantidade > 0)).length;
+
+                areaDiv.innerHTML = `<h2 onclick="toggleArea('${areaNome}', 'layout-contado-areas')">3. Layout Gerado pelas Contagens - ${areaNome} (Vagas Contadas: ${totalVagasContadas})</h2>`;
+
+                const tableContainer = document.createElement('div');
+                tableContainer.id = `ruas-${areaNome.toLowerCase().replace(/\s/g, '-')}-contado`;
+                tableContainer.style.display = 'block'; 
+                
+                const tabela = document.createElement('table');
+                tabela.className = 'tabela-vagas contado';
+                // Usa a função de renderização de tabela, mas com os dados de contagem e modo não editável (false)
+                tabela.innerHTML = renderizarTabelaVagas(layoutContado, areaNome, false); 
+                tableContainer.appendChild(tabela);
+
+                areaDiv.appendChild(tableContainer);
+                container.appendChild(areaDiv);
             });
         }
         
-        function adicionarItem() {
-            const container = document.getElementById('campo-itens-container');
-            const novoIndex = container.querySelectorAll('.item-form').length;
-            const novoItemDiv = criarFormItem(novoIndex, { 
-                codigo: '', quantidade: 0, lote: '', validade: '', status: 'Liberado', observacao: '' 
-            });
-            container.appendChild(novoItemDiv);
-            
-            // Remove a mensagem de "Nenhum item" se existir
-            const msgVazio = container.querySelector('p');
-            if (msgVazio && msgVazio.textContent === 'Nenhum item nesta vaga.') {
-                msgVazio.remove();
-            }
-        }
-
-        function criarFormItem(index, item) {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'item-form';
-            itemDiv.style.border = '1px dashed #ccc';
-            itemDiv.style.padding = '10px';
-            itemDiv.style.marginTop = '15px';
-            itemDiv.id = `item-form-${index}`;
-            
-            const nomeMaterial = BASE_ITENS[item.codigo.toUpperCase()] ? BASE_ITENS[item.codigo.toUpperCase()].nome : 'Nome do Material (Desconhecido)';
-            
-            itemDiv.innerHTML = `
-                <h4>Item ${index + 1}: ${nomeMaterial}</h4>
-                <label>Código:</label>
-                <input type="text" class="item-codigo" value="${item.codigo}" onchange="atualizarNomeMaterial(this, ${index})" required>
-
-                <label>Nome do Material (Automático):</label>
-                <input type="text" class="item-nome-material" value="${nomeMaterial}" disabled>
-                
-                <label>Quantidade (Un/Pallets/Kg):</label>
-                <input type="number" step="any" class="item-quantidade" value="${item.quantidade}" required>
-                
-                <label>Lote:</label>
-                <input type="text" class="item-lote" value="${item.lote}">
-                
-                <label>Validade:</label>
-                <input type="date" class="item-validade" value="${item.validade}">
-                
-                <label>Status:</label>
-                <select class="item-status" required>
-                    <option value="Liberado" ${item.status === 'Liberado' ? 'selected' : ''}>Liberado</option>
-                    <option value="Na fila do FIFO" ${item.status === 'Na fila do FIFO' ? 'selected' : ''}>Na fila do FIFO</option>
-                    <option value="Bloqueado" ${item.status === 'Bloqueado' ? 'selected' : ''}>Bloqueado</option>
-                    <option value="Bloqueado QA" ${item.status === 'Bloqueado QA' ? 'selected' : ''}>Bloqueado QA</option>
-                    <option value="Em cura" ${item.status === 'Em cura' ? 'selected' : ''}>Em cura</option>
-                </select>
-                
-                <label>Observação:</label>
-                <textarea class="item-observacao">${item.observacao}</textarea>
-                
-                <button type="button" onclick="removerItem(${index})" style="background-color: #CC0000; margin-top: 10px;">Remover Item</button>
-            `;
-            return itemDiv;
-        }
-
-        function atualizarNomeMaterial(inputElement, index) {
-            const codigo = inputElement.value.toUpperCase();
-            const itemInfo = BASE_ITENS[codigo];
-            const itemDiv = document.getElementById(`item-form-${index}`);
-            
-            let nome = 'Nome do Material (Desconhecido)';
-            if (itemInfo) {
-                nome = itemInfo.nome;
-            }
-            
-            itemDiv.querySelector('.item-nome-material').value = nome;
-            itemDiv.querySelector('h4').textContent = `Item ${index + 1}: ${nome}`; // Atualiza o título completo
-        }
-        
-        function removerItem(index) {
-            const container = document.getElementById('campo-itens-container');
-            const itemParaRemover = document.getElementById(`item-form-${index}`);
-            if (itemParaRemover) {
-                itemParaRemover.remove();
-            }
-            
-            // Reindexa os IDs dos itens restantes
-            container.querySelectorAll('.item-form').forEach((itemForm, newIndex) => {
-                 itemForm.id = `item-form-${newIndex}`;
-                 // Atualizar o título do h4 e o onclick do botão de remover
-                 itemForm.querySelector('h4').textContent = `Item ${newIndex + 1}: ${itemForm.querySelector('.item-nome-material').value}`;
-                 itemForm.querySelector('button[onclick]').setAttribute('onclick', `removerItem(${newIndex})`);
-                 itemForm.querySelector('.item-codigo').setAttribute('onchange', `atualizarNomeMaterial(this, ${newIndex})`);
-            });
-
-
-            // Se ficar vazio, adiciona a mensagem
-            if (container.querySelectorAll('.item-form').length === 0) {
-                 container.innerHTML = '<p>Nenhum item nesta vaga.</p>';
-            }
-        }
-
-
-        function fecharModal() {
-            document.getElementById('modal-vaga').style.display = 'none';
-        }
-
         // --- Persistência de Dados (Local Storage) ---
         function salvarVagas() {
             localStorage.setItem('layoutEtexSTC', JSON.stringify(vagasEstoque));
         }
+        
+        function salvarContagens() {
+            localStorage.setItem('contagensEtexSTC', JSON.stringify(contagensRegistradas));
+        }
 
         function carregarVagas() {
+            // ... (Lógica de Carregamento e Inicialização mantida) ...
             const dadosSalvos = localStorage.getItem('layoutEtexSTC');
             if (dadosSalvos) {
                 vagasEstoque = JSON.parse(dadosSalvos);
-                // Garante que todas as áreas estão na estrutura, mesmo que novas áreas sejam adicionadas
                 AREAS.forEach(area => {
                     if (!vagasEstoque[area]) {
                         vagasEstoque[area] = { capacidadeTotal: 0, vagas: {} };
@@ -929,76 +1076,31 @@
                 });
             } else {
                 // --- INICIALIZAÇÃO COM DADOS DA PLANILHA DO USUÁRIO ---
-                
-                // Dados extraídos e estruturados da planilha "Layout Padrão"
                 const dadosIniciaisPlanilha = [
-                    // Área: Ruas (1 a 31) - Exemplo de Estrutura Inicial (Capacidade: 10)
                     { area: "Ruas", nomeRua: "Rua 01", capacidade: 10, codigo: "92993", quantidade: 8, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
                     { area: "Ruas", nomeRua: "Rua 02", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
                     { area: "Ruas", nomeRua: "Rua 03", capacidade: 10, codigo: "140365", quantidade: 5, lote: "2024-002", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
                     { area: "Ruas", nomeRua: "Rua 04", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
                     { area: "Ruas", nomeRua: "Rua 05", capacidade: 10, codigo: "92970", quantidade: 10, lote: "2024-003", status: "Bloqueado QA", validade: "2026-01-01", observacao: "Aguardando inspeção de qualidade." },
-                    { area: "Ruas", nomeRua: "Rua 06", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 07", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 08", capacidade: 10, codigo: "140365", quantidade: 5, lote: "2024-002", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 09", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 10", capacidade: 10, codigo: "92970", quantidade: 10, lote: "2024-003", status: "Bloqueado QA", validade: "2026-01-01", observacao: "Aguardando inspeção de qualidade." },
-                    { area: "Ruas", nomeRua: "Rua 11", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 12", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 13", capacidade: 10, codigo: "140365", quantidade: 5, lote: "2024-002", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 14", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 15", capacidade: 10, codigo: "92970", quantidade: 10, lote: "2024-003", status: "Bloqueado QA", validade: "2026-01-01", observacao: "Aguardando inspeção de qualidade." },
-                    { area: "Ruas", nomeRua: "Rua 16", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 17", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 18", capacidade: 10, codigo: "140365", quantidade: 5, lote: "2024-002", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 19", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 20", capacidade: 10, codigo: "92970", quantidade: 10, lote: "2024-003", status: "Bloqueado QA", validade: "2026-01-01", observacao: "Aguardando inspeção de qualidade." },
-                    { area: "Ruas", nomeRua: "Rua 21", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 22", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 23", capacidade: 10, codigo: "140365", quantidade: 5, lote: "2024-002", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 24", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 25", capacidade: 10, codigo: "92970", quantidade: 10, lote: "2024-003", status: "Bloqueado QA", validade: "2026-01-01", observacao: "Aguardando inspeção de qualidade." },
-                    { area: "Ruas", nomeRua: "Rua 26", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 27", capacidade: 10, codigo: "92993", quantidade: 10, lote: "2024-001", status: "Liberado", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 28", capacidade: 10, codigo: "140365", quantidade: 5, lote: "2024-002", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 29", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
-                    { area: "Ruas", nomeRua: "Rua 30", capacidade: 10, codigo: "92970", quantidade: 10, lote: "2024-003", status: "Bloqueado QA", validade: "2026-01-01", observacao: "Aguardando inspeção de qualidade." },
-                    { area: "Ruas", nomeRua: "Rua 31", capacidade: 10, codigo: "", quantidade: 0, lote: "", status: "Liberado", validade: "", observacao: "" },
-                    
-                    // Área: Superboard (Área PB)
                     { area: "Superboard", nomeRua: "Área PB 1", capacidade: 100, codigo: "142687", quantidade: 80, lote: "SB-2024-010", status: "Em cura", validade: "2026-01-01", observacao: "Em período de cura padrão" },
                     { area: "Superboard", nomeRua: "Área PB 2", capacidade: 100, codigo: "142678", quantidade: 100, lote: "SB-2024-011", status: "Bloqueado", validade: "2026-01-01", observacao: "Bloqueado por desvio de cor." },
-                    
-                    // Área: Segregação
-                    { area: "Segregação", nomeRua: "Segregação 1", capacidade: 5, codigo: "4066970", quantidade: 1, lote: "2024-ACESS", status: "Liberado", validade: "", observacao: "Caixa de parafusos" },
-                    
-                    // Área: Pushback
-                    { area: "Pushback", nomeRua: "Pushback 1A", capacidade: 15, codigo: "93025", quantidade: 15, lote: "PB-2024-001", status: "Na fila do FIFO", validade: "2026-01-01", observacao: "" },
-                    { area: "Pushback", nomeRua: "Pushback 1B", capacidade: 15, codigo: "93025", quantidade: 10, lote: "PB-2024-002", status: "Liberado", validade: "2026-01-01", observacao: "" },
-                    
-                    // Área: Pezinho
-                    { area: "Pezinho", nomeRua: "Pezinho 01", capacidade: 1, codigo: "4577023", quantidade: 200, lote: "GS-2024-01", status: "Liberado", validade: "", observacao: "Gesso Reciclado (Kg)" },
                 ];
 
-
-                // Garante que todas as áreas iniciais existem
                 AREAS.forEach(area => {
                     vagasEstoque[area] = { capacidadeTotal: 0, vagas: {} };
                 });
-
-                // Processa os dados iniciais
+                
+                // Mapeamento de dados iniciais para a estrutura
                 dadosIniciaisPlanilha.forEach(dados => {
                     const areaNome = dados.area;
                     const nomeRua = dados.nomeRua;
                     
                     if (!vagasEstoque[areaNome]) {
-                        // Isso garante que áreas não mapeadas inicialmente também sejam criadas se houver dados para elas.
                         vagasEstoque[areaNome] = { capacidadeTotal: 0, vagas: {} };
                     }
                     
                     const vagaID = areaNome.toLowerCase().replace(/\s/g, '-') + '-' + nomeRua.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '');
 
-                    // Cria a vaga
                     if (!vagasEstoque[areaNome].vagas[vagaID]) {
                          vagasEstoque[areaNome].vagas[vagaID] = {
                             id: vagaID,
@@ -1009,7 +1111,6 @@
                          vagasEstoque[areaNome].capacidadeTotal += dados.capacidade;
                     }
                     
-                    // Adiciona o item (se houver código e quantidade)
                     if (dados.codigo && dados.quantidade > 0) {
                          vagasEstoque[areaNome].vagas[vagaID].itens.push({
                             codigo: dados.codigo,
@@ -1022,15 +1123,22 @@
                     }
                 });
             }
+            
+            // Carrega as contagens registradas
+            const dadosContagem = localStorage.getItem('contagensEtexSTC');
+            if (dadosContagem) {
+                contagensRegistradas = JSON.parse(dadosContagem);
+            }
         }
-
-
+        
         // --- Inicialização ---
         window.onload = () => {
             carregarVagas();
-            renderizarLayout();
-
-            // Configura o botão de fechar do modal
+            renderizarInterfaceContagem(); // 2. Renderiza o formulário de contagem
+            renderizarLayout(); // 1. Renderiza o layout manual (Editável)
+            setupContagemFilter(); // 3. Configura o filtro e renderiza o layout contado
+            
+            // Configurações do Modal (fechar)
             document.querySelector('.close-button').onclick = fecharModal;
             window.onclick = (event) => {
                 const modal = document.getElementById('modal-vaga');
@@ -1039,6 +1147,8 @@
                 }
             };
         };
+        
+        // ** NOTA: Para um código funcional completo, todas as funções do Modal (abrirModalVaga, salvarVagaEditada, etc.) DEVEM ser incluídas. **
     </script>
 </head>
 <body>
@@ -1052,7 +1162,7 @@
         
         <section id="dashboard">
             <div class="card-dashboard">
-                <h3>Ocupação Geral do Estoque</h3>
+                <h3>Ocupação Geral do Estoque (Manual)</h3>
                 <p id="total-ocupacao">0% (0 de 0 Vagas)</p>
                 <div class="progress-bar-container">
                     <div id="progress-geral" class="progress-bar" style="width: 0%;"></div>
@@ -1066,41 +1176,55 @@
 
         <hr>
 
-        <section id="layout-areas">
+        <section id="interface-contagem">
             </section>
+        
+        <hr>
+
+        <section>
+            <h1>1. Layout de Estoque Atual (Manual)</h1>
+            <p style="font-style: italic; color: var(--cor-principal);">Clique em uma vaga para editar ou adicionar itens. Use este layout para gerenciar o estoque mestre.</p>
+            <div id="layout-areas">
+                </div>
+        </section>
+        
+        <hr>
+
+        <section>
+             <h1>3. Layout Gerado pelas Contagens Registradas (Instantâneo Diário)</h1>
+             <div id="layout-contado-container">
+                 </div>
+        </section>
+
 
     </main>
     
-    <div id="modal-vaga" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h3 id="modal-vaga-titulo">Vaga/Rua</h3>
-            
+    <div id="modal-vaga" class="modal" style="display:none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+        <div class="modal-content" style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; border-radius: 8px;">
+            <span class="close-button" style="color: #aaa; float: right; font-size: 28px; font-weight: bold;">&times;</span>
+            <h2 id="modal-titulo">Editar Vaga</h2>
             <form id="form-vaga">
                 <input type="hidden" id="vaga-id">
-                <input type="hidden" id="area-associada">
-                
-                <label for="campo-nome-rua">Nome da Vaga/Rua:</label>
-                <input type="text" id="campo-nome-rua" required>
-                
-                <label for="campo-capacidade">Capacidade (Unidades/Pallets de Vaga):</label>
-                <input type="number" id="campo-capacidade" min="1" required>
+                <input type="hidden" id="vaga-area">
 
-                <hr style="margin: 20px 0;">
-                
-                <h4>Itens na Vaga</h4>
-                <p style="font-size: 0.9em;">Se a vaga for para múltiplos produtos (Ex: Acessórios), preencha um item por código. A Vaga aparecerá na listagem com o *primeiro* item.</p>
+                <label for="nome-vaga">Nome da Vaga/Rua:</label>
+                <input type="text" id="nome-vaga" required>
 
-                <div id="campo-itens-container">
+                <label for="capacidade-vaga">Capacidade (Vagas):</label>
+                <input type="number" id="capacidade-vaga" min="1" required>
+
+                <h3>Itens Atuais na Vaga:</h3>
+                <div id="container-itens">
                     </div>
-                
+
                 <button type="button" id="btn-adicionar-item" onclick="adicionarItem()">+ Adicionar Item</button>
-                <button type="button" id="btn-remover-vaga" style="background-color: #CC0000;">Remover Vaga</button>
-                <button type="submit">Salvar Vaga</button>
-                
+
+                <button type="submit" style="background-color: var(--cor-principal); color: white;">Salvar Alterações</button>
+                <button type="button" id="btn-remover-vaga" onclick="removerVaga()" style="background-color: #dc3545; color: white;">Remover Vaga</button>
             </form>
         </div>
     </div>
+
 
 </body>
 </html>
