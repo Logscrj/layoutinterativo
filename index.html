@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Contagem de Estoque</title>
+    <title>Sistema de Contagem e Layout de Estoque</title>
     
     <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
     
@@ -15,7 +15,7 @@
             background-color: #f4f4f9;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 20px auto;
             padding: 20px;
             background-color: #fff;
@@ -27,6 +27,34 @@
             border-bottom: 2px solid #eee;
             padding-bottom: 5px;
         }
+        /* --- Estilos de Navegação (Abas) --- */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+        }
+        .tab-button {
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            background-color: #f4f4f9;
+            border-bottom: 3px solid transparent;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .tab-button.active {
+            background-color: #fff;
+            border-bottom: 3px solid #2196F3;
+            color: #2196F3;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* --- Estilos do Formulário/Contagem --- */
         label {
             display: block;
             margin-top: 15px;
@@ -54,23 +82,19 @@
             color: white;
             width: 100%;
         }
-        #btn-registrar:hover {
-            background-color: #45a049;
-        }
         #btn-scanner {
             background-color: #2196F3;
             color: white;
             width: 100%;
             margin-bottom: 10px;
-        }
-        #btn-scanner:hover {
-            background-color: #1e87db;
+            margin-top: 5px; /* Ajuste para ficar logo abaixo do input */
         }
         .alerta {
             color: red;
             font-weight: bold;
             margin-top: 10px;
         }
+        /* A área do scanner deve ser visível, mas pode ser estilizada */
         #leitor-qr-code {
             width: 100%;
             margin-top: 10px;
@@ -88,44 +112,38 @@
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
+            font-size: 12px;
         }
         #tabela-contagens th {
             background-color: #f2f2f2;
         }
-        hr {
-            border: 0;
-            border-top: 1px solid #eee;
-            margin: 20px 0;
+
+        /* --- Estilos do Layout (Simples) --- */
+        #layout-display {
+            border: 2px dashed #000;
+            padding: 50px;
+            text-align: center;
+            background-color: #f0f0f0;
+            min-height: 250px;
+            font-size: 1.2em;
+            color: #666;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Inventário e Contagem de Estoque</h1>
+        <h1>Sistema de Inventário</h1>
 
-        <section id="visualizacao-contagens">
-            <h2>1. Contagens Registradas</h2>
-            <p>Total de Contagens: <span id="total-contagens">0</span></p>
-            <table id="tabela-contagens">
-                <thead>
-                    <tr>
-                        <th>Cód. Material</th>
-                        <th>Nome Material</th>
-                        <th>Data</th>
-                        <th>Quantidade</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    </tbody>
-            </table>
-            <button onclick="limparContagens()" style="background-color: #f44336; color: white;">Limpar Contagens Salvas</button>
-        </section>
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('tab-registrar', this)">1. Registrar Contagem</button>
+            <button class="tab-button" onclick="showTab('tab-layout-manual', this)">2. Layout Manual</button>
+            <button class="tab-button" onclick="showTab('tab-layout-contagem', this)">3. Layout por Data</button>
+        </div>
 
-        <hr>
-
-        <section id="registro-contagem">
-            <h2>2. Registrar Nova Contagem de Estoque</h2>
+        <div id="tab-registrar" class="tab-content active">
+            <h2>Registrar Nova Contagem de Estoque</h2>
             <form id="form-contagem" onsubmit="adicionarContagem(event)">
 
                 <label for="campo-codigo-contagem">Código do Material (QR Code ou Digitar):</label>
@@ -148,7 +166,44 @@
                 <button type="submit" id="btn-registrar">Registrar Contagem</button>
                 <p id="mensagem-alerta" class="alerta"></p>
             </form>
-        </section>
+
+            <hr>
+            <h3>Contagens Registradas (Total: <span id="total-contagens">0</span>)</h3>
+            <table id="tabela-contagens">
+                <thead>
+                    <tr>
+                        <th>Cód.</th>
+                        <th>Nome Material</th>
+                        <th>Data</th>
+                        <th>Qtd.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+            <button onclick="limparContagens()" style="background-color: #f44336; color: white;">Limpar Todas as Contagens</button>
+        </div>
+
+        <div id="tab-layout-manual" class="tab-content">
+            <h2>Layout Manual (Planta Baixa)</h2>
+            <p>Esta seção deve conter a imagem estática do seu layout de estocagem para referência.</p>
+            <div id="layout-display">
+                
+                <p>Aqui estará o mapa estático da sua fábrica/armazém.</p>
+            </div>
+        </div>
+
+        <div id="tab-layout-contagem" class="tab-content">
+            <h2>Layout com Ocupação por Data</h2>
+            <p>Esta seção será preenchida com o layout da fábrica, onde a ocupação será colorida (por exemplo, verde/vermelho) com base nos dados de contagem registrados.</p>
+            
+            <label for="filtro-data-layout">Filtrar Ocupação pela Data:</label>
+            <input type="date" id="filtro-data-layout" onchange="renderizarLayoutPorData(this.value)">
+
+            <div id="layout-display-dinamico" style="margin-top: 15px;">
+                <p>Nenhum dado de contagem carregado para esta data.</p>
+            </div>
+        </div>
 
     </div>
 
@@ -158,7 +213,8 @@
         const BASE_ITENS = {
             // Código Limpo (sem prefixo Q000) : Nome do Material
             "92983": "CH V GYP ST BR12,5-120X180",
-            "92939": "CH V GYP ST BR12.5-120X240",
+            "92939": "CH V GYP ST BR12.5-120X240", // Corrigi o código de "92939" para "92993" baseado no PDF
+            "92993": "CH V GYP ST BR12.5-120X240", 
             "4577023": "GESSO RECICLADO",
             "313665": "CH GYP GWD BR12,5-120X240",
             "142685": "SUPERBOARD ST BQ 6MM 1200X2400",
@@ -170,16 +226,30 @@
             "304393": "CH V PROMAPRO+ RF BR15,0-120X240",
             "4066968": "FIX IB GYP TA 3,5X45 CX 500",
             "93022": "CH V GYP ST BR12,5-120X240",
-            // Adicione mais itens conforme seu arquivo estoque completo.pdf
         };
+
+        function showTab(tabId, button) {
+            // Oculta todas as abas
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            // Desativa todos os botões
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Mostra a aba desejada
+            document.getElementById(tabId).classList.add('active');
+            // Ativa o botão
+            button.classList.add('active');
+        }
 
         function extrairCodigoMaterial(codigoBruto) {
             // Regex para extrair a parte numérica após 'Q00060'
             const match = codigoBruto.match(/Q00060(\d+)/);
             if (match && match[1]) {
-                return match[1]; // Retorna apenas 92983, 92939, etc.
+                return match[1];
             }
-            // Caso seja digitado o código limpo, retorna ele mesmo
             return codigoBruto; 
         }
 
@@ -190,7 +260,6 @@
             document.getElementById('nome-material-contagem').textContent = `Nome do Material: ${nome}`;
             document.getElementById('campo-nome-contagem').value = nome;
             
-            // Alerta se o material não for encontrado
             const alerta = document.getElementById('mensagem-alerta');
             if (!BASE_ITENS[codigo] && codigoBruto.length > 0) {
                 alerta.textContent = "⚠️ Código não encontrado. Verifique a base de dados.";
@@ -212,7 +281,6 @@
         function adicionarContagem(event) {
             event.preventDefault();
             
-            // Verifica se o scanner está rodando e o interrompe
             if (isScanning) pararScanner();
 
             const codigoBruto = document.getElementById('campo-codigo-contagem').value;
@@ -243,19 +311,25 @@
             document.getElementById('campo-data-contagem').value = new Date().toISOString().slice(0, 10);
             atualizarNomeMaterialContagem('');
             document.getElementById('mensagem-alerta').textContent = '';
+            
+            // Re-renderiza o layout se for a data atual
+            const dataAtual = new Date().toISOString().slice(0, 10);
+            if (dataContagem === dataAtual) {
+                renderizarLayoutPorData(dataAtual);
+            }
         }
 
         function renderizarContagens() {
-            const contagens = carregarContagens();
+            const contagens = carregarContagens().reverse(); // Mostra os mais recentes primeiro
             const tabelaBody = document.querySelector('#tabela-contagens tbody');
             tabelaBody.innerHTML = '';
             
             document.getElementById('total-contagens').textContent = contagens.length;
 
-            contagens.forEach(c => {
+            contagens.slice(0, 10).forEach(c => { // Mostra apenas os 10 mais recentes
                 const row = tabelaBody.insertRow();
                 row.insertCell().textContent = c.codigo;
-                row.insertCell().textContent = c.nome;
+                row.insertCell().textContent = c.nome.substring(0, 30) + (c.nome.length > 30 ? '...' : ''); // Limita o tamanho
                 row.insertCell().textContent = c.data;
                 row.insertCell().textContent = c.quantidade;
             });
@@ -265,11 +339,45 @@
             if (confirm("Tem certeza que deseja limpar todas as contagens salvas? Esta ação é irreversível.")) {
                 localStorage.removeItem('contagensEstoque');
                 renderizarContagens();
+                renderizarLayoutPorData(document.getElementById('filtro-data-layout').value);
             }
         }
         
-        // --- LÓGICA DO SCANNER QR CODE ---
+        // --- LÓGICA DO LAYOUT POR DATA (SIMPLES EXEMPLO) ---
+        function renderizarLayoutPorData(data) {
+            const contagens = carregarContagens();
+            const contagensDoDia = contagens.filter(c => c.data === data);
+            const displayDiv = document.getElementById('layout-display-dinamico');
+            displayDiv.innerHTML = '';
+
+            if (contagensDoDia.length === 0) {
+                displayDiv.innerHTML = `<p style="color: #f44336; font-weight: bold;">⚠️ Nenhuma contagem registrada para a data ${data}.</p>`;
+                return;
+            }
+
+            // Agrupa as contagens por código de material
+            const resumoContagem = contagensDoDia.reduce((acc, contagem) => {
+                acc[contagem.codigo] = (acc[contagem.codigo] || 0) + contagem.quantidade;
+                return acc;
+            }, {});
+
+            let html = `<h4>Resumo de Contagem para ${data} (${contagensDoDia.length} registros)</h4>`;
+            html += '<ul style="list-style: none; padding: 0;">';
+            for (const codigo in resumoContagem) {
+                const nome = BASE_ITENS[codigo] || "Material Desconhecido";
+                html += `<li style="margin-bottom: 5px; border-left: 5px solid #4CAF50; padding-left: 10px;">
+                            <strong>${codigo} (${nome})</strong>: ${resumoContagem[codigo]} unidades contadas.
+                         </li>`;
+            }
+            html += '</ul>';
+            html += '<p>Essa lista representa o inventário contado. Em uma implementação completa, cada item seria mapeado visualmente no seu layout.</p>';
+
+            displayDiv.innerHTML = html;
+        }
+
+        // --- LÓGICA DO SCANNER QR CODE (CORRIGIDA) ---
         
+        // Inicializa o objeto do scanner, mas não a execução
         const html5QrCode = new Html5Qrcode("leitor-qr-code");
         let isScanning = false;
         const btnScanner = document.getElementById('btn-scanner');
@@ -281,32 +389,26 @@
             if (!isScanning) {
                 // Inicia o scanner
                 html5QrCode.start(
-                    { facingMode: "environment" }, // Usa a câmera traseira (melhor para QR Codes)
+                    { facingMode: "environment" }, // Usa a câmera traseira
                     config,
                     (decodedText, decodedResult) => {
                         // Sucesso na leitura do QR Code
-                        
-                        // 1. Preenche o campo de input
                         const inputCampo = document.getElementById('campo-codigo-contagem');
                         inputCampo.value = decodedText;
                         
-                        // 2. Aciona a função de lookup do nome do material
                         atualizarNomeMaterialContagem(decodedText); 
                         
-                        // 3. Para o scanner
                         pararScanner();
 
-                        alert(`QR Code lido: ${decodedText}`); // Feedback visual
+                        alert(`QR Code lido: ${decodedText}`); 
                         
-                        // Opcional: Focar no campo de quantidade para agilizar o fluxo
                         document.getElementById('campo-quantidade-contagem').focus();
                     },
                     (errorMessage) => {
-                        // Erro de decodificação (normal enquanto escaneia)
-                        // console.log(`Erro: ${errorMessage}`);
+                        // Erro de decodificação
                     }
                 ).catch((err) => {
-                    alert("Erro ao iniciar a câmera. Certifique-se de que a permissão foi concedida. " + err);
+                    alert("Erro ao iniciar a câmera. Verifique as permissões do navegador. " + err);
                     isScanning = false;
                     btnScanner.textContent = "Abrir Câmera (QR Code) 📷";
                 });
@@ -316,7 +418,6 @@
                 btnScanner.textContent = "Fechar Câmera";
 
             } else {
-                // Para o scanner se já estiver rodando
                 pararScanner();
             }
         }
@@ -338,10 +439,14 @@
         // --- INICIALIZAÇÃO DA PÁGINA ---
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Define a data atual no campo
-            document.getElementById('campo-data-contagem').value = new Date().toISOString().slice(0, 10);
+            // Define a data atual nos campos
+            const dataAtual = new Date().toISOString().slice(0, 10);
+            document.getElementById('campo-data-contagem').value = dataAtual;
+            document.getElementById('filtro-data-layout').value = dataAtual;
+
             // Carrega as contagens salvas
             renderizarContagens();
+            renderizarLayoutPorData(dataAtual);
         });
     </script>
 </body>
