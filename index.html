@@ -32,6 +32,7 @@
             display: flex;
             margin-bottom: 20px;
             border-bottom: 1px solid #ccc;
+            overflow-x: auto; /* Permite rolar em telas pequenas */
         }
         .tab-button {
             padding: 10px 15px;
@@ -41,6 +42,7 @@
             border-bottom: 3px solid transparent;
             font-weight: bold;
             transition: all 0.2s;
+            white-space: nowrap;
         }
         .tab-button.active {
             background-color: #fff;
@@ -54,7 +56,7 @@
             display: block;
         }
 
-        /* --- Estilos do Formulário/Contagem --- */
+        /* --- Estilos do Formulário/Contagem/Layout --- */
         label {
             display: block;
             margin-top: 15px;
@@ -82,52 +84,45 @@
             color: white;
             width: 100%;
         }
-        #btn-scanner {
+        #btn-scanner, #btn-salvar-layout {
             background-color: #2196F3;
             color: white;
             width: 100%;
             margin-bottom: 10px;
-            margin-top: 5px; /* Ajuste para ficar logo abaixo do input */
+            margin-top: 5px; 
         }
         .alerta {
             color: red;
             font-weight: bold;
             margin-top: 10px;
         }
-        /* A área do scanner deve ser visível, mas pode ser estilizada */
         #leitor-qr-code {
             width: 100%;
             margin-top: 10px;
             border: 1px solid #ddd;
             padding: 5px;
             border-radius: 4px;
-            display: none; /* Inicia oculto */
+            display: none; 
         }
-        #tabela-contagens {
+        table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
         }
-        #tabela-contagens th, #tabela-contagens td {
+        table th, table td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
             font-size: 12px;
         }
-        #tabela-contagens th {
+        table th {
             background-color: #f2f2f2;
         }
-
-        /* --- Estilos do Layout (Simples) --- */
-        #layout-display {
-            border: 2px dashed #000;
-            padding: 50px;
-            text-align: center;
-            background-color: #f0f0f0;
-            min-height: 250px;
-            font-size: 1.2em;
-            color: #666;
-            margin-top: 20px;
+        .layout-input {
+            width: 100%;
+            padding: 4px;
+            box-sizing: border-box;
+            border: 1px solid #eee;
         }
     </style>
 </head>
@@ -137,9 +132,9 @@
         <h1>Sistema de Inventário</h1>
 
         <div class="tabs">
-            <button class="tab-button active" onclick="showTab('tab-registrar', this)">1. Registrar Contagem</button>
-            <button class="tab-button" onclick="showTab('tab-layout-manual', this)">2. Layout Manual</button>
-            <button class="tab-button" onclick="showTab('tab-layout-contagem', this)">3. Layout por Data</button>
+            <button class="tab-button active" onclick="showTab('tab-registrar', this)">1. Registrar Contagem 📝</button>
+            <button class="tab-button" onclick="showTab('tab-layout-manual', this)">2. Layout Manual (Config) ⚙️</button>
+            <button class="tab-button" onclick="showTab('tab-layout-contagem', this)">3. Layout por Data (Real) 📊</button>
         </div>
 
         <div id="tab-registrar" class="tab-content active">
@@ -185,24 +180,36 @@
         </div>
 
         <div id="tab-layout-manual" class="tab-content">
-            <h2>Layout Manual (Planta Baixa)</h2>
-            <p>Esta seção deve conter a imagem estática do seu layout de estocagem para referência.</p>
-            <div id="layout-display">
-                
-                <p>Aqui estará o mapa estático da sua fábrica/armazém.</p>
-            </div>
+            <h2>Configuração Manual do Layout (Capacidade e Material Padrão)</h2>
+            <p>Edite a capacidade (vagas) e o material padrão para cada área/rua. Clique em "Salvar Configuração" após as alterações.</p>
+            
+            <button type="button" id="btn-salvar-layout" onclick="salvarConfiguracaoLayout()">
+                Salvar Configuração de Layout 💾
+            </button>
+
+            <table id="tabela-layout-manual">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Área/Rua</th>
+                        <th style="width: 20%;">Capacidade (Vagas)</th>
+                        <th style="width: 45%;">Material Padrão</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+            
         </div>
 
         <div id="tab-layout-contagem" class="tab-content">
-            <h2>Layout com Ocupação por Data</h2>
-            <p>Esta seção será preenchida com o layout da fábrica, onde a ocupação será colorida (por exemplo, verde/vermelho) com base nos dados de contagem registrados.</p>
+            <h2>Layout com Ocupação por Data (Inventário Real)</h2>
+            <p>Aqui você verá o resumo da ocupação real baseado nas contagens registradas.</p>
             
             <label for="filtro-data-layout">Filtrar Ocupação pela Data:</label>
             <input type="date" id="filtro-data-layout" onchange="renderizarLayoutPorData(this.value)">
 
             <div id="layout-display-dinamico" style="margin-top: 15px;">
-                <p>Nenhum dado de contagem carregado para esta data.</p>
-            </div>
+                </div>
         </div>
 
     </div>
@@ -213,7 +220,6 @@
         const BASE_ITENS = {
             // Código Limpo (sem prefixo Q000) : Nome do Material
             "92983": "CH V GYP ST BR12,5-120X180",
-            "92939": "CH V GYP ST BR12.5-120X240", // Corrigi o código de "92939" para "92993" baseado no PDF
             "92993": "CH V GYP ST BR12.5-120X240", 
             "4577023": "GESSO RECICLADO",
             "313665": "CH GYP GWD BR12,5-120X240",
@@ -226,7 +232,19 @@
             "304393": "CH V PROMAPRO+ RF BR15,0-120X240",
             "4066968": "FIX IB GYP TA 3,5X45 CX 500",
             "93022": "CH V GYP ST BR12,5-120X240",
+            // Adicione mais itens conforme seu arquivo
         };
+        
+        // --- CONFIGURAÇÃO INICIAL DO LAYOUT MANUAL ---
+        const CONFIGURACAO_INICIAL_LAYOUT = [
+            { area: "Rua 1", produto: "92983", capacidade: 10, capacidade_original: 10 },
+            { area: "Rua 2", produto: "92993", capacidade: 10, capacidade_original: 10 },
+            { area: "Rua 3", produto: "142685", capacidade: 8, capacidade_original: 8 },
+            { area: "Doca Ext 1", produto: "4577023", capacidade: 5, capacidade_original: 5 },
+            { area: "Doca Ext 2", produto: "4577023", capacidade: 5, capacidade_original: 5 },
+            { area: "Pátio A", produto: "304393", capacidade: 20, capacidade_original: 20 },
+            // Adicione mais áreas/ruas conforme a sua necessidade
+        ];
 
         function showTab(tabId, button) {
             // Oculta todas as abas
@@ -242,10 +260,21 @@
             document.getElementById(tabId).classList.add('active');
             // Ativa o botão
             button.classList.add('active');
+            
+            // Renderiza o conteúdo da aba Layout Manual quando ela é aberta
+            if (tabId === 'tab-layout-manual') {
+                renderizarLayoutManual();
+            }
+            if (tabId === 'tab-layout-contagem') {
+                const dataAtual = new Date().toISOString().slice(0, 10);
+                document.getElementById('filtro-data-layout').value = dataAtual;
+                renderizarLayoutPorData(dataAtual);
+            }
         }
 
+        // --- FUNÇÕES GERAIS ---
+
         function extrairCodigoMaterial(codigoBruto) {
-            // Regex para extrair a parte numérica após 'Q00060'
             const match = codigoBruto.match(/Q00060(\d+)/);
             if (match && match[1]) {
                 return match[1];
@@ -267,6 +296,8 @@
                 alerta.textContent = "";
             }
         }
+        
+        // --- LÓGICA DE CONTROLE DE DADOS (Contagens) ---
         
         function carregarContagens() {
             const contagens = JSON.parse(localStorage.getItem('contagensEstoque')) || [];
@@ -311,25 +342,19 @@
             document.getElementById('campo-data-contagem').value = new Date().toISOString().slice(0, 10);
             atualizarNomeMaterialContagem('');
             document.getElementById('mensagem-alerta').textContent = '';
-            
-            // Re-renderiza o layout se for a data atual
-            const dataAtual = new Date().toISOString().slice(0, 10);
-            if (dataContagem === dataAtual) {
-                renderizarLayoutPorData(dataAtual);
-            }
         }
 
         function renderizarContagens() {
-            const contagens = carregarContagens().reverse(); // Mostra os mais recentes primeiro
+            const contagens = carregarContagens().reverse(); 
             const tabelaBody = document.querySelector('#tabela-contagens tbody');
             tabelaBody.innerHTML = '';
             
             document.getElementById('total-contagens').textContent = contagens.length;
 
-            contagens.slice(0, 10).forEach(c => { // Mostra apenas os 10 mais recentes
+            contagens.slice(0, 15).forEach(c => { // Mostra os 15 mais recentes
                 const row = tabelaBody.insertRow();
                 row.insertCell().textContent = c.codigo;
-                row.insertCell().textContent = c.nome.substring(0, 30) + (c.nome.length > 30 ? '...' : ''); // Limita o tamanho
+                row.insertCell().textContent = c.nome.substring(0, 30) + (c.nome.length > 30 ? '...' : ''); 
                 row.insertCell().textContent = c.data;
                 row.insertCell().textContent = c.quantidade;
             });
@@ -339,14 +364,77 @@
             if (confirm("Tem certeza que deseja limpar todas as contagens salvas? Esta ação é irreversível.")) {
                 localStorage.removeItem('contagensEstoque');
                 renderizarContagens();
-                renderizarLayoutPorData(document.getElementById('filtro-data-layout').value);
+                const dataAtual = new Date().toISOString().slice(0, 10);
+                renderizarLayoutPorData(dataAtual);
             }
         }
         
-        // --- LÓGICA DO LAYOUT POR DATA (SIMPLES EXEMPLO) ---
+        // --- LÓGICA DE CONTROLE DE DADOS (Layout Manual) ---
+        
+        function carregarConfiguracaoLayout() {
+            const config = JSON.parse(localStorage.getItem('layoutConfig')) || CONFIGURACAO_INICIAL_LAYOUT;
+            return config;
+        }
+
+        function salvarConfiguracaoLayout() {
+            const tabelaBody = document.querySelector('#tabela-layout-manual tbody');
+            const linhas = tabelaBody.querySelectorAll('tr');
+            const novaConfiguracao = [];
+
+            linhas.forEach(row => {
+                const area = row.cells[0].textContent.trim();
+                const capacidade = parseInt(row.querySelector('.input-capacidade').value) || 0;
+                const produto = row.querySelector('.input-produto').value.trim();
+                
+                novaConfiguracao.push({ area, produto, capacidade, capacidade_original: capacidade });
+            });
+            
+            localStorage.setItem('layoutConfig', JSON.stringify(novaConfiguracao));
+            alert("Configuração de Layout Salva com Sucesso!");
+        }
+
+        function renderizarLayoutManual() {
+            const config = carregarConfiguracaoLayout();
+            const tabelaBody = document.querySelector('#tabela-layout-manual tbody');
+            tabelaBody.innerHTML = '';
+
+            config.forEach((item, index) => {
+                const row = tabelaBody.insertRow();
+                
+                // Célula 1: Área/Rua (Não editável)
+                row.insertCell().textContent = item.area;
+                
+                // Célula 2: Capacidade (Editável)
+                const cellCapacidade = row.insertCell();
+                cellCapacidade.innerHTML = `<input type="number" class="layout-input input-capacidade" value="${item.capacidade}" min="0" onchange="document.getElementById('btn-salvar-layout').style.backgroundColor='#f44336'">`;
+                
+                // Célula 3: Material Padrão (Editável - Código do Material)
+                const cellProduto = row.insertCell();
+                const nomeProduto = BASE_ITENS[item.produto] || "Código Inválido";
+                cellProduto.innerHTML = `
+                    <input type="text" class="layout-input input-produto" value="${item.produto}" oninput="mostrarNomeProdutoManual(this, ${index})" onchange="document.getElementById('btn-salvar-layout').style.backgroundColor='#f44336'">
+                    <small id="produto-nome-${index}" style="display: block; margin-top: 3px; font-style: italic; color: ${nomeProduto === 'Código Inválido' ? 'red' : '#555'};">${nomeProduto}</small>
+                `;
+            });
+            
+            document.getElementById('btn-salvar-layout').style.backgroundColor='#2196F3'; // Volta a cor padrão se renderizar sem mudanças
+
+        }
+        
+        function mostrarNomeProdutoManual(inputElement, index) {
+            const codigo = inputElement.value.trim();
+            const nome = BASE_ITENS[codigo] || "Código Inválido";
+            const smallElement = document.getElementById(`produto-nome-${index}`);
+            
+            smallElement.textContent = nome;
+            smallElement.style.color = nome === 'Código Inválido' ? 'red' : '#555';
+        }
+
+        // --- LÓGICA DO LAYOUT POR DATA (REAL) ---
         function renderizarLayoutPorData(data) {
             const contagens = carregarContagens();
             const contagensDoDia = contagens.filter(c => c.data === data);
+            const configLayout = carregarConfiguracaoLayout();
             const displayDiv = document.getElementById('layout-display-dinamico');
             displayDiv.innerHTML = '';
 
@@ -355,29 +443,55 @@
                 return;
             }
 
-            // Agrupa as contagens por código de material
+            // 1. Agrupa as contagens por código de material
             const resumoContagem = contagensDoDia.reduce((acc, contagem) => {
                 acc[contagem.codigo] = (acc[contagem.codigo] || 0) + contagem.quantidade;
                 return acc;
             }, {});
 
-            let html = `<h4>Resumo de Contagem para ${data} (${contagensDoDia.length} registros)</h4>`;
-            html += '<ul style="list-style: none; padding: 0;">';
-            for (const codigo in resumoContagem) {
-                const nome = BASE_ITENS[codigo] || "Material Desconhecido";
-                html += `<li style="margin-bottom: 5px; border-left: 5px solid #4CAF50; padding-left: 10px;">
-                            <strong>${codigo} (${nome})</strong>: ${resumoContagem[codigo]} unidades contadas.
-                         </li>`;
-            }
-            html += '</ul>';
-            html += '<p>Essa lista representa o inventário contado. Em uma implementação completa, cada item seria mapeado visualmente no seu layout.</p>';
+            // 2. Cria a tabela de comparação (Configurado vs Real)
+            let html = `<h4>Comparação do Inventário Real vs Configuração (${data})</h4>`;
+            html += '<table id="tabela-comparacao-layout">';
+            html += '<thead><tr><th>Área/Rua</th><th>Mat. Padrão</th><th>Capac. (Vagas)</th><th>Qtd. Contada</th><th>Status</th></tr></thead><tbody>';
+
+            configLayout.forEach(itemConfig => {
+                const qtdContada = resumoContagem[itemConfig.produto] || 0;
+                const nomeProdutoConfig = BASE_ITENS[itemConfig.produto] || "Inválido";
+                
+                // Lógica de Status: Simples comparação entre capacidade e o que foi contado para o material padrão daquela área
+                let status, cor;
+                if (qtdContada > itemConfig.capacidade) {
+                    status = `ACIMA da Capacidade (${qtdContada - itemConfig.capacidade} a mais)`;
+                    cor = '#f44336'; // Vermelho
+                } else if (qtdContada > 0 && qtdContada <= itemConfig.capacidade) {
+                    status = `Ocupado (${itemConfig.capacidade - qtdContada} Vagas Livres)`;
+                    cor = '#4CAF50'; // Verde
+                } else if (qtdContada === 0) {
+                    status = `LIVRE (Vazio)`;
+                    cor = '#ff9800'; // Amarelo/Laranja
+                } else {
+                    status = `Sem Contagem Relevante`;
+                    cor = '#9e9e9e'; // Cinza
+                }
+                
+                html += `<tr>
+                            <td>${itemConfig.area}</td>
+                            <td>${nomeProdutoConfig} (${itemConfig.produto})</td>
+                            <td>${itemConfig.capacidade}</td>
+                            <td>${qtdContada}</td>
+                            <td style="color: white; background-color: ${cor}; font-weight: bold;">${status}</td>
+                         </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            html += '<p style="margin-top: 15px;">*O Status compara a quantidade contada do MATERIAL PADRÃO da área com a Capacidade definida.</p>';
 
             displayDiv.innerHTML = html;
         }
 
+
         // --- LÓGICA DO SCANNER QR CODE (CORRIGIDA) ---
         
-        // Inicializa o objeto do scanner, mas não a execução
         const html5QrCode = new Html5Qrcode("leitor-qr-code");
         let isScanning = false;
         const btnScanner = document.getElementById('btn-scanner');
@@ -387,28 +501,22 @@
             const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
             if (!isScanning) {
-                // Inicia o scanner
                 html5QrCode.start(
-                    { facingMode: "environment" }, // Usa a câmera traseira
+                    { facingMode: "environment" }, 
                     config,
                     (decodedText, decodedResult) => {
-                        // Sucesso na leitura do QR Code
                         const inputCampo = document.getElementById('campo-codigo-contagem');
                         inputCampo.value = decodedText;
-                        
                         atualizarNomeMaterialContagem(decodedText); 
-                        
                         pararScanner();
-
                         alert(`QR Code lido: ${decodedText}`); 
-                        
                         document.getElementById('campo-quantidade-contagem').focus();
                     },
                     (errorMessage) => {
                         // Erro de decodificação
                     }
                 ).catch((err) => {
-                    alert("Erro ao iniciar a câmera. Verifique as permissões do navegador. " + err);
+                    alert("Erro ao iniciar a câmera. Verifique as permissões do navegador e se o dispositivo tem câmera. " + err);
                     isScanning = false;
                     btnScanner.textContent = "Abrir Câmera (QR Code) 📷";
                 });
@@ -446,7 +554,6 @@
 
             // Carrega as contagens salvas
             renderizarContagens();
-            renderizarLayoutPorData(dataAtual);
         });
     </script>
 </body>
